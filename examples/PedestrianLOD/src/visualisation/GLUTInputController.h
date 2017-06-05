@@ -15,6 +15,7 @@
  */
 #ifndef __GLUT_INPUT_CONTROLLER
 #define __GLUT_INPUT_CONTROLLER
+#include <glm/detail/type_vec3.hpp>
 
 /** initInputConroller
  * Initilises the input controller by setting the initial viewpoint vectors
@@ -29,6 +30,7 @@ void initInputConroller();
  * @param	y y screen position 
  */
 void mouse(int button, int state, int x, int y);
+void mouseMove(int x, int y);
 
 /** keyboard
  * Function for controlling keyboard input with GLUT
@@ -36,7 +38,9 @@ void mouse(int button, int state, int x, int y);
  * @param	x 
  * @param	y 
  */
-void keyboard( unsigned char key, int x, int y);
+void keyboard(unsigned char key, int x, int y);
+void keyboardUp(unsigned char key, int x, int y);
+void handleKeyBuffer();
 
 /** specialKeyboard
  * Function for controlling special keyboard (arrow keys) input with GLUT
@@ -46,10 +50,6 @@ void keyboard( unsigned char key, int x, int y);
  */
 void specialKeyboard(int key, int x, int y);
 
-//viewpoint vectors and eye distance
-extern float eye[3];
-extern float up[3];
-extern float look[3];
-extern float eye_distance;
-
+void setMatrices();
+extern glm::vec3 eye;
 #endif __GLUT_INPUT_CONTROLLER

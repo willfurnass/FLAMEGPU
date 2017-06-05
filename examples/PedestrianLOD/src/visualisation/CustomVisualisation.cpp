@@ -101,9 +101,11 @@ extern void initVisualisation()
 
     // register callbacks
     glutDisplayFunc( display);
-    glutKeyboardFunc( keyboard);
+	glutKeyboardFunc(keyboard);
+	glutKeyboardUpFunc(keyboardUp);
 	glutSpecialFunc( specialKeyboard);
-    glutMouseFunc( mouse);
+	glutMouseFunc(mouse);
+	glutPassiveMotionFunc(mouseMove);
 
 
 
@@ -167,7 +169,8 @@ void display(void)
 	glEnable(GL_LIGHT0);
 	
 	//lookat
-	gluLookAt(eye[0], eye[1], eye[2], look[0], look[1], look[2], up[0], up[1], up[2]);
+	handleKeyBuffer();
+	setMatrices();
 
 	//lighting
 	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);

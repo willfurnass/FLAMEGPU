@@ -13,8 +13,9 @@
  * on www.flamegpu.com website.
  * 
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
+#include <ctype.h>
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <cmath>
@@ -23,12 +24,19 @@
 #include "MenuDisplay.h"
 #include "GlobalsController.h"
 #include "MenuDisplay.h"
+#include "Camera.h"
+#include <cstring>
+#define DELTA_THETA_PHI 0.01f
+#define MOUSE_SPEED 0.001f
+#define SHIFT_MULTIPLIER 5.0f
 
+#define MOUSE_SPEED_FPS 0.05f
+#define DELTA_MOVE 0.1f
+#define DELTA_STRAFE 0.1f
+#define DELTA_ASCEND 0.1f
+#define DELTA_ROLL 0.01f
 //viewpoint vectors and eye distance
-float eye[3];
-float up[3];
-float look[3];
-float eye_distance;
+glm::vec3 eye;
 
 float theta;
 float phi;
@@ -51,153 +59,47 @@ int zoom_key = 0;
 #define PI 3.14
 #define rad(x) (PI / 180) * x
 
-//prototypes
-void updateRotationComponents();
-//mouse motion funcs
-void rotate(int x, int y);
-void zoom(int x, int y);
-void translate(int x, int y);
+Camera *cam;
 
+char keys[1024];
 void initInputConroller()
 {
-	//init view
-	eye_distance = ENV_MAX*1.75f;
-	up[0] = 0.0f;
-	up[1] = 1.0f;
-	up[2] = 0.0f;
-	eye[0] = 0.0f;
-	eye[1] = 0.0f;
-	eye[2] = eye_distance;
-	look[0] = 0.0f;
-	look[1] = 0.0f;
-	look[2] = 0.0f;
-
-	theta = 3.14159265f;
-	phi = 1.57079633f;
+	float eye_distance = ENV_MAX*1.75f;
+	cam = new Camera(glm::vec3(1, 1, eye_distance), glm::vec3(0));
+	memset(keys, 0, sizeof(keys));
 }
 
-
+bool mouseLocked = false;
+bool handleMouseMove = true;
 void mouse(int button, int state, int x, int y)
 {
-	if (zoom_key)
-		button  = GLUT_MIDDLE_BUTTON;
-
-    if (state == GLUT_DOWN) {
-        switch(button)
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+		mouseLocked = !mouseLocked;
+		if (mouseLocked)
 		{
-			case(GLUT_LEFT_BUTTON):
-			{
-				glutMotionFunc(translate);
-				break;	
-			}
-			case(GLUT_RIGHT_BUTTON):
-			{
-				glutMotionFunc(rotate);
-				break;	
-			}
-			case(GLUT_MIDDLE_BUTTON):
-			{
-				glutMotionFunc(zoom);
-				break;	
-			}
+			glutSetCursor(GLUT_CURSOR_NONE);
+			handleMouseMove = true;
 		}
-    } else if (state == GLUT_UP) {
-		glutMotionFunc(NULL);
-    }
-
-    mouse_old_x = x;
-    mouse_old_y = y;
-    glutPostRedisplay();
+		else
+			glutSetCursor(GLUT_CURSOR_INHERIT);
+	}
 }
-
-void updateRotationComponents()
+void mouseMove(int x, int y)
 {
-	cos_theta = (float) cos(theta);
-	sin_theta = (float) sin(theta);
-	cos_phi = (float) cos(phi);
-	sin_phi = (float) sin(phi);
+	if (mouseLocked&&handleMouseMove)
+	{
+		cam->turn((x - (800 / 2)) * MOUSE_SPEED, (y - (600 / 2)) * MOUSE_SPEED);
+		glutWarpPointer(800 / 2, 600 / 2);
+	}
+	handleMouseMove = !handleMouseMove;
 }
-
-void rotate(int x, int y)
-{
-	float dx, dy;
-	//calc change in mouse movement
-	dx = x - mouse_old_x;
-	dy = y - mouse_old_y;
-
-	//update rotation component values
-	updateRotationComponents();
-
-	//update eye distance
-	theta-=dx*ROTATION_SCALE;
-	phi+=dy*ROTATION_SCALE;
-
-	phi = (phi<MIN_PHI)?0.0f:phi;
-
-	//update eye and and up vectors
-	eye[0]= look[0] + -eye_distance*sin_theta*cos_phi;
-	eye[1]= look[1] + eye_distance*cos_theta*cos_phi;
-	eye[2]= look[2] + eye_distance*sin_phi;
-	up[0]= sin_theta*sin_phi;
-	up[1]= -cos_theta*sin_phi;
-	up[2]= cos_phi;
-	//update prev positions
-	mouse_old_x = x;
-	mouse_old_y = y;
-}
-
-void zoom(int x, int y)
-{
-	float dx, dy;
-	//calc change in mouse movement
-	dx = x - mouse_old_x;
-	dy = y - mouse_old_y;
-
-	//update rotation component values
-	updateRotationComponents();
-
-	//update eye distance
-	eye_distance -= dy*ZOOM_SCALE;
-	eye_distance = (eye_distance<MAX_ZOOM)?MAX_ZOOM:eye_distance;
-
-	//update eye vector
-	eye[0]= look[0] + -eye_distance*sin_theta*cos_phi;
-	eye[1]= look[1] + eye_distance*cos_theta*cos_phi;
-	eye[2]= look[2] + eye_distance*sin_phi;
-
-	//update prev positions
-	mouse_old_x = x;
-	mouse_old_y = y;
-}
-
-void translate(int x, int y)
-{
-	float dx, dy;
-	//calc change in mouse movement
-	dx = x - mouse_old_x;
-	dy = y - mouse_old_y;
-
-	//update rotation component values
-	updateRotationComponents();
-
-	//translate look and eye vector position
-	look[0] += ((dx*cos_theta) + (dy*sin_theta))*TRANSLATION_SCALE;
-	look[1] += ((dx*sin_theta) - (dy*cos_theta))*TRANSLATION_SCALE;
-	look[2] += 0.0;
-	eye[0]= look[0] + -eye_distance*sin_theta*cos_phi;
-	eye[1]= look[1] + eye_distance*cos_theta*cos_phi;
-	eye[2]= look[2] + eye_distance*sin_phi;
-
-
-	//update prev positions
-	mouse_old_x = x;
-	mouse_old_y = y;
-}
-
 void keyboard( unsigned char key, int x, int y)
 {
-    switch( key) {
-		
+	keys[1023] = tolower(key) != key;
+	keys[tolower(key)] = 1;
+	keys[1022] = (glutGetModifiers()&GLUT_ACTIVE_CTRL) == GLUT_ACTIVE_CTRL;
+
+	switch (key) {
 		case('f'):
 		{
 			toggleFullScreenMode();
@@ -220,24 +122,42 @@ void keyboard( unsigned char key, int x, int y)
 			zoom_key = !zoom_key;
 			break;
 		}
-		
-
-		//exit
-		case('q') :
-		{
-			exit(0);
-			break;
-		}
-
 		default:
 		{
 			break;
 		}
     }
 }
-
+void keyboardUp(unsigned char key, int x, int y)
+{
+	keys[1023] = tolower(key) != key;
+	keys[1022] = (glutGetModifiers()&GLUT_ACTIVE_CTRL) == GLUT_ACTIVE_CTRL;
+	keys[tolower(key)] = 0;
+}
+extern float frame_time;
+void handleKeyBuffer()
+{
+	float speed = 1.0f;
+	float turboMultiplier = keys[1023] ? SHIFT_MULTIPLIER*speed : speed;
+	turboMultiplier /= (1000.0f / frame_time);//Adjust speed for variable fps
+	if (keys['w'])
+		cam->move(DELTA_MOVE*turboMultiplier);
+	if (keys['a'])
+		cam->strafe(-DELTA_STRAFE*turboMultiplier);
+	if (keys['s'])
+		cam->move(-DELTA_MOVE*turboMultiplier);
+	if (keys['d'])
+		cam->strafe(DELTA_STRAFE*turboMultiplier);
+	if (keys['q'])
+		cam->roll(-DELTA_ROLL);
+	if (keys['e'])
+		cam->roll(DELTA_ROLL);
+	if (keys[' '])
+		cam->ascend(DELTA_ASCEND*turboMultiplier);
+}
 void specialKeyboard(int key, int x, int y)
 {
+	keys[1023] = tolower(key) == key;
 	if (menuDisplayed())
 	{
 		switch(key) {
@@ -267,4 +187,14 @@ void specialKeyboard(int key, int x, int y)
 			}
 		}
 	}
+}
+
+
+void setMatrices()
+{
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glm::mat4 mv = cam->view();
+	glLoadMatrixf((float*)&mv);
+	eye = cam->getEye();
 }

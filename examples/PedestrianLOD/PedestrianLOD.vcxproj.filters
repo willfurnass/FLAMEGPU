@@ -47,6 +47,9 @@
     <ClInclude Include="src\visualisation\PedestrianPopulation.h">
       <Filter>visualisation</Filter>
     </ClInclude>
+    <ClInclude Include="src\visualisation\Camera.h">
+      <Filter>visualisation</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\FLAMEGPU\templates\FLAMEGPU_kernals.xslt">
@@ -112,6 +115,9 @@
     </ClCompile>
     <ClCompile Include="src\dynamic\io.cpp">
       <Filter>dynamic</Filter>
+    </ClCompile>
+    <ClCompile Include="src\visualisation\Camera.cpp">
+      <Filter>visualisation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
