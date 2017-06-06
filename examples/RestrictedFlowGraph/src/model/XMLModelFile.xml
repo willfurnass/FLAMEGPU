@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type="text/xsl" href="FLAMEGPU_vcproj.xslt"?>
+<gpu:xmodel xmlns:gpu="http://www.dcs.shef.ac.uk/~paul/XMMLGPU"
+        xmlns="http://www.dcs.shef.ac.uk/~paul/XMML">
+	<name>RestrictedFlowGraph</name>
+	<gpu:environment>
+    <gpu:constants>
+      <gpu:variable>
+        <type>unsigned int</type>
+        <name>MAX_LIFESPAN</name>
+      </gpu:variable>
+    </gpu:constants>
+
+    <gpu:functionFiles>
+      <file>functions.c</file>
+    </gpu:functionFiles>
+    
+    <gpu:initFunctions>
+      <gpu:initFunction>
+        <gpu:name>initialiseHost</gpu:name>
+      </gpu:initFunction>
+      <gpu:initFunction>
+        <gpu:name>generateAgentInit</gpu:name>
+      </gpu:initFunction>
+    </gpu:initFunctions>
+
+    <gpu:exitFunctions>
+      <gpu:exitFunction>
+        <gpu:name>freeHostMemory</gpu:name>
+      </gpu:exitFunction>
+    </gpu:exitFunctions>
+
+    <gpu:stepFunctions>
+      <gpu:stepFunction>
+        <gpu:name>generateAgentStep</gpu:name>
+      </gpu:stepFunction>
+    </gpu:stepFunctions>
+   
+	</gpu:environment>
+
+	<xagents>
+		<gpu:xagent>
+			<name>Agent</name>
+			<description>A simple agent moving around a graph</description> 
+			<memory>
+				<gpu:variable>
+					<type>unsigned int</type> 
+					<name>id</name>
+				</gpu:variable>
+        <gpu:variable>
+          <type>unsigned int</type>
+          <name>current_graph_element_id</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>unsigned int</type>
+          <name>next_graph_element_id</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>unsigned int</type>
+          <name>next_graph_element_population</name>
+        </gpu:variable>
+        <gpu:variable>
+          <!--<type>bool</type>-->
+          <type>int</type>
+          <name>vertex_or_edge</name>
+        </gpu:variable>
+        <gpu:variable>
+          <!--<type>bool</type>-->
+          <type>int</type>
+          <name>has_intent</name>
+        </gpu:variable>
+        <!-- XYZ for default visualisation / Spatially partitioned message benchmarking-->
+				<gpu:variable>
+					<type>float</type>
+					<name>x</name>
+				</gpu:variable>
+				<gpu:variable>
+					<type>float</type>
+					<name>y</name>
+				</gpu:variable>
+				<gpu:variable>
+					<type>float</type>
+					<name>z</name>
+				</gpu:variable>
+			</memory>
+      
+			<functions>
+				<gpu:function>
+					<name>output_location</name>
+					<currentState>default</currentState>
+					<nextState>default</nextState>
+					<outputs>
+						<gpu:output>
+							<messageName>location</messageName>
+							<gpu:type>single_message</gpu:type>
+						</gpu:output>
+					</outputs>
+					<gpu:reallocate>false</gpu:reallocate>
+					<gpu:RNG>true</gpu:RNG>
+				</gpu:function>
+				<gpu:function>
+					<name>read_locations</name>
+					<currentState>default</currentState>
+					<nextState>default</nextState>
+					<inputs>
+						<gpu:input>
+							<messageName>location</messageName>
+						</gpu:input>
+					</inputs>
+					<gpu:reallocate>false</gpu:reallocate>
+					<gpu:RNG>false</gpu:RNG>
+				</gpu:function>
+
+        <gpu:function>
+          <name>declare_intent</name>
+          <currentState>default</currentState>
+          <nextState>default</nextState>
+          <outputs>
+            <gpu:output>
+              <messageName>intent</messageName>
+              <gpu:type>single_message</gpu:type>
+            </gpu:output>
+          </outputs>
+          <!--Only agents which have determined there is capcity to move, can do so.-->
+          <condition>
+            <lhs>
+              <agentVariable>has_intent</agentVariable>
+            </lhs>
+            <operator>==</operator>
+            <rhs>
+              <value>true</value>
+            </rhs>
+          </condition>
+          <gpu:reallocate>false</gpu:reallocate>
+          <gpu:RNG>false</gpu:RNG>
+        </gpu:function>
+
+        <gpu:function>
+          <name>resolve_intent</name>
+          <currentState>default</currentState>
+          <nextState>default</nextState>
+          <inputs>
+            <gpu:input>
+              <messageName>intent</messageName>
+            </gpu:input>
+          </inputs>
+          <!--Only agents which have determined there is capcity to move, can do so.-->
+          <condition>
+            <lhs>
+              <agentVariable>has_intent</agentVariable>
+            </lhs>
+            <operator>==</operator>
+            <rhs>
+              <value>true</value>
+            </rhs>
+          </condition>
+          <gpu:reallocate>false</gpu:reallocate>
+          <gpu:RNG>false</gpu:RNG>
+        </gpu:function>
+
+			</functions>
+			<states>
+				<gpu:state>
+					<name>default</name>
+				</gpu:state>
+        <initialState>default</initialState>
+			</states>
+			<gpu:type>continuous</gpu:type>
+			<gpu:bufferSize>2048</gpu:bufferSize>
+		</gpu:xagent>
+
+	</xagents>
+
+	<messages>
+		<gpu:message>
+			<name>location</name>
+			<description>a message holding the location of an agent within the graph structure</description>
+			<variables>
+				<gpu:variable>
+					<type>unsigned int</type>
+					<name>id</name>
+				</gpu:variable>
+        <gpu:variable>
+          <type>unsigned int</type>
+          <name>current_graph_element_id</name>
+        </gpu:variable>
+        <gpu:variable>
+          <!--<type>bool</type>-->
+          <type>int</type>
+          <name>vertex_or_edge</name>
+        </gpu:variable>
+				<gpu:variable>
+					<type>float</type>
+					<name>x</name>
+				</gpu:variable>
+				<gpu:variable>
+					<type>float</type>
+					<name>y</name>
+				</gpu:variable>
+				<gpu:variable>
+					<type>float</type>
+					<name>z</name>
+				</gpu:variable>
+			</variables>
+            <gpu:partitioningNone/>
+			<gpu:bufferSize>2048</gpu:bufferSize>
+		</gpu:message>
+    
+    <gpu:message>
+      <name>intent</name>
+      <description>a message holding the location of an agent within the graph structure</description>
+      <variables>
+        <gpu:variable>
+          <type>unsigned int</type>
+          <name>id</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>unsigned int</type>
+          <name>next_graph_element_id</name>
+        </gpu:variable>
+        <gpu:variable>
+          <!--<type>bool</type>-->
+          <type>int</type>
+          <name>vertex_or_edge</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>x</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>y</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>z</name>
+        </gpu:variable>
+      </variables>
+      <gpu:partitioningNone/>
+      <gpu:bufferSize>2048</gpu:bufferSize>
+    </gpu:message>
+	</messages>
+
+	<layers>
+		<layer>
+			<gpu:layerFunction>
+				<name>output_location</name>
+			</gpu:layerFunction>
+		</layer>
+		<layer>
+			<gpu:layerFunction>
+				<name>read_locations</name>
+			</gpu:layerFunction>
+		</layer>
+    <layer>
+      <gpu:layerFunction>
+        <name>declare_intent</name>
+      </gpu:layerFunction>
+    </layer>
+    <layer>
+      <gpu:layerFunction>
+        <name>resolve_intent</name>
+      </gpu:layerFunction>
+    </layer>
+
+	</layers>
+
+</gpu:xmodel>
