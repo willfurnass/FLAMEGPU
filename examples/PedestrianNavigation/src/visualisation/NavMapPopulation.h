@@ -29,102 +29,35 @@ void initNavMapPopulation();
  */
 void renderNavMapPopulation();
 
-/** setGridDisplayOnOff
- * Toggles the grid display on or off depending on the current state
- */
-void toggleGridDisplayOnOff();
-
-/** setArrowDisplayOnOff
- * Turns the arrow display on or off
- * @param state on off state 
- */
-void setArrowsDisplayOnOff(TOGGLE_STATE state);
-
-/** toggleArrowDisplayOnOff
- * Toggles the arrow display on or off depending on the current state
- */
-void toggleArrowsDisplayOnOff();
-
-/** getActiveExit
- * Gets the active exit number
- */
-int getActiveExit();
-
-//EXTERNAL FUNCTIONS IMPLEMENTD IN NavMapPopulation.cu CUDA FILE
-/** generate_instances
- *  Generates instances by calling a CUDA Kernel which outputs agent data to a texture buffer object
- * @param instances_tbo Texture Buffer Object used for storing instances data
- */
-extern void generate_instances(GLuint* instances_tbo);
-
-/** displayMapNumber
- *  Sets which map number should be displayed (0 = collision map, 1 = exit 1 map, etc).
- * @param map_no Map number to be displayed
- */
-extern void displayMapNumber(int map_no);
-
-/** getCurrentMap
- *  Gets the currently selected map
- */
-extern int getCurrentMap();
-
-
-
-/** Vertex Shader source for rendering directional arrows */
+/** Basic flat shading v/f shaders */
 static const char navmap_vshader_source[] = 
 {  
-	"#version 120																	\n"
-	"#extension EXT_gpu_shader4 : require   										\n"
-	"uniform samplerBuffer instance_map;											\n"
-	"uniform float NM_WIDTH;														\n"
-	"uniform float ENV_MAX;															\n"
-	"uniform float ENV_WIDTH;														\n"
-	"attribute in float instance_index;												\n"
+    "#version 120																	\n"
+    "varying vec3 u_normal;									                		\n"
     "void main()																	\n"
     "{																				\n"
-	"   int index = int(instance_index);											\n"
-	"	vec4 instance = texelFetchBuffer(instance_map, index);						\n"
-
-	"	//calculate rotation angle componants										\n"
-	"	float angle = instance.z;													\n" 	
-	"   bool is_force = true;														\n"
-	"   if (angle >7.0f){	//more than 360 degrees(6.28 rads)						\n"
-	"       is_force = false;														\n"
-	"		angle = 1.57079633f;													\n"
-	"	}																			\n"
-	"	float cosLength = cos(angle);												\n"
-	"	float sinLength = sin(angle);												\n"
-
-	"	//rotate the model															\n"
-	"	vec3 position;																\n"
-	"   if (is_force){																\n"
-	"		position[0] = cosLength * gl_Vertex[0] - sinLength * gl_Vertex[1];		\n"
-	"		position[1] = sinLength * gl_Vertex[0] + cosLength * gl_Vertex[1];		\n"
-	"		position[2] = gl_Vertex[2];												\n"
-	"	}else{																		\n"
-	"		position[0] = gl_Vertex[0];												\n"
-	"	    position[1] = cosLength * gl_Vertex[1] - sinLength * gl_Vertex[2];		\n"
-	"		position[2] = sinLength * gl_Vertex[1] + cosLength * gl_Vertex[2];		\n"
-	"	}																			\n"
-
-	"	//select output color														\n"
-	"   if (is_force){																\n"
-	"		gl_FrontColor = vec4(0.75, 0, 0, 0);									\n"			
-	"	}else{																		\n"
-	"		gl_FrontColor = vec4(0.9, 0.9, 0.9, 1);									\n"
-	"	}																			\n"
-
-
-	"   //offset model position														\n"
-	"	float x_displace = ((instance.x+0.5)/(NM_WIDTH/ENV_WIDTH))-ENV_MAX;			\n"
-	"	float y_displace = ((instance.y+0.5)/(NM_WIDTH/ENV_WIDTH))-ENV_MAX;			\n"
-	"   position.x += x_displace;													\n"
-	"   position.y += y_displace;													\n"
-	"   position.z += instance.w*0.0775;													\n"
-
-	"   //apply model view proj														\n"
-	"   gl_Position = gl_ModelViewProjectionMatrix * vec4(position, 1);				\n"
+    "   //pass gl_Vertex to frag shader to calculate face normal                	\n"
+    "	u_normal = (gl_ModelViewMatrix * gl_Vertex.xzyw).rgb;            		    \n"
+    "	//apply model view proj                     								\n"
+    "	gl_Position = gl_ModelViewProjectionMatrix * vec4(gl_Vertex.xzy,1.0);	    \n"//Swap y and z in model, because FLAME Z up
+    "   //Pass gl_Color to frag shader  											\n"
+    "   gl_FrontColor = gl_Color;                                           		\n"
     "}																				\n"
 };
-
+static const char navmap_fshader_source[] =
+{
+    "#version 120																	\n"
+    "varying vec3 u_normal;   				                						\n"
+    "varying vec3 o_color;              											\n"
+    "void main()																	\n"
+    "{																				\n"
+    "   //Calculate face normal                                             		\n"
+    "	vec3 N  = normalize(cross(dFdx(u_normal), dFdy(u_normal)));//Face Normal	\n"
+    "	//This sets the Light source to be the camera						    	\n"
+    "	vec3 L = normalize(vec3(0,0,0)-u_normal);									\n"
+    "   vec3 t_color = (gl_Color.xyz==vec3(0.0f))?o_color:gl_Color.xyz;		    	\n"
+    "   vec3 diffuse = t_color * max(dot(L, N), 0.0);	                            \n"
+    "   gl_FragColor = vec4(diffuse.xyz,1);	                                    	\n"
+    "}																				\n"
+};
 #endif _NAVMAP_POPULATION

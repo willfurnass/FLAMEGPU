@@ -88,18 +88,30 @@ void initPedestrianPopulation()
 	//Left
 	allocateObjModel(lod1_v_count, lod1_f_count, &lod1l_vertices, &lod1l_normals, &lod1l_faces);
 	loadObjFromFile("../../media/person-lod1-left.obj",	lod1_v_count, lod1_f_count, lod1l_vertices, lod1l_normals, lod1l_faces);
-	scaleObj(PEDESTRIAN_MODEL_SCALE, lod1_v_count, lod1l_vertices);		 
+    scaleObj(PEDESTRIAN_MODEL_SCALE, lod1_v_count, lod1l_vertices);
 	//Right
 	allocateObjModel(lod1_v_count, lod1_f_count, &lod1r_vertices, &lod1r_normals, &lod1r_faces);
 	loadObjFromFile("../../media/person-lod1-right.obj", lod1_v_count, lod1_f_count, lod1r_vertices, lod1r_normals, lod1r_faces);
-	scaleObj(PEDESTRIAN_MODEL_SCALE, lod1_v_count, lod1r_vertices);
+    scaleObj(PEDESTRIAN_MODEL_SCALE, lod1_v_count, lod1r_vertices);
 
 	createPedestrianBufferObjects();
 
 	initPedestrianShader();
 }
+void rescalePedestrianPop(float newHeight)
+{
+    //scale obj
+    scaleObjToHeight(newHeight, lod1_v_count, lod1l_vertices);
+    scaleObjToHeight(newHeight, lod1_v_count, lod1r_vertices);
+    //update vbos
+    glBindBuffer(GL_ARRAY_BUFFER, lod1l_verts_vbo);
+    glBufferData(GL_ARRAY_BUFFER, lod1_v_count*sizeof(glm::vec3), lod1l_vertices, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, lod1r_verts_vbo);
+    glBufferData(GL_ARRAY_BUFFER, lod1_v_count*sizeof(glm::vec3), lod1r_vertices, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 
-
+extern int getActiveExit();
 void renderPedestrianPopulation()
 {	
 	int i;

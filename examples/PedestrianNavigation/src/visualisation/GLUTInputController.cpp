@@ -13,6 +13,7 @@
  * on www.flamegpu.com website.
  * 
  */
+#define  _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glew.h>
@@ -23,6 +24,7 @@
 #include "NavMapPopulation.h"
 #include "GlobalsController.h"
 #include "MenuDisplay.h"
+#include <ctype.h>
 
 //viewpoint vectors and eye distance
 float eye[3];
@@ -45,7 +47,7 @@ int zoom_key = 0;
 #define ROTATION_SCALE 0.01f
 #define ZOOM_SCALE 0.01f
 
-#define MAX_ZOOM 0.01f
+#define MAX_ZOOM 0.000000001f
 #define MIN_PHI 0.0f
 
 #define PI 3.14
@@ -193,63 +195,56 @@ void translate(int x, int y)
 	mouse_old_x = x;
 	mouse_old_y = y;
 }
-
+int activeExit = -1;
+int getActiveExit() { return activeExit; }
+void toggleRenderModel();
 void keyboard( unsigned char key, int x, int y)
 {
+    key = tolower(key);
     switch( key) {
-		case('0'):
-		{
-			displayMapNumber(0);
-			break;
-		}
-		case('1'):
-		{
-			displayMapNumber(1);
-			break;
-		}
-		case('2'):
-		{
-			displayMapNumber(2);
-			break;
-		}
-		case('3'):
-		{
-			displayMapNumber(3);
-			break;
-		}
-		case('4'):
-		{
-			displayMapNumber(4);
-			break;
-		}
-		case('5'):
-		{
-			displayMapNumber(5);
-			break;
-		}
-		case('6'):
-		{
-			displayMapNumber(6);
-			break;
-		}
-		case('7'):
-		{
-			displayMapNumber(7);
-			break;
-		}
-		case('g'):
-		{
-			toggleGridDisplayOnOff();
-			break;
-		}
+        case('0') :
+        {
+            activeExit = -1;
+            break;
+        }
+        case('1') :
+        {
+            activeExit = 0;
+            break;
+        }
+        case('2') :
+        {
+            activeExit = 1;
+            break;
+        }
+        case('3') :
+        {
+            activeExit = 2;
+            break;
+        }
+        case('4') :
+        {
+            activeExit = 3;
+            break;
+        }
+        case('5') :
+        {
+            activeExit = 4;
+            break;
+        }
+        case('6') :
+        {
+            activeExit = 5;
+            break;
+        }
+        case('7') :
+        {
+            activeExit = 6;
+            break;
+        }
 		case('f'):
 		{
 			toggleFullScreenMode();
-			break;
-		}
-		case('a'):
-		{
-			toggleArrowsDisplayOnOff();
 			break;
 		}
 		case('i'):
@@ -268,10 +263,13 @@ void keyboard( unsigned char key, int x, int y)
 		{
 			zoom_key = !zoom_key;
 			break;
-		}
-		
-
-		//exit
+        }
+        case('p') :
+        {
+            toggleRenderModel();
+            break;
+        }
+       	//exit
 		case('q') :
 		{
 			exit(0);

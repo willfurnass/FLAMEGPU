@@ -25,10 +25,13 @@ static const char* FACE_IDENTIFIER = "f";
 #include <glm/glm.hpp>
 
 //OBJ1 FORMAT FUNCTIONS
+void allocateObjModel(const char *name, int *v_count, int *f_count, glm::vec3** vertices, glm::vec3** normals, glm::ivec3** faces);
 void allocateObjModel(int vertex_count, int face_count, glm::vec3** vertices, glm::vec3** normals, glm::ivec3** faces);
 void cleanupObjModel(glm::vec3** vertices, glm::vec3** normals, glm::ivec3** faces);
 void loadObjFromFile(char* name, int vertex_count, int face_count, glm::vec3* vertices, glm::vec3* normals, glm::ivec3* faces);
 void scaleObj(float scale_factor, int vertex_count, glm::vec3* vertices);
+void scaleObjToHeight(float height, int vertex_count, glm::vec3* vertices);
+void scaleObjwithOffset(float scaleFactor, glm::vec3 offset,  int vertex_count, glm::vec3* vertices);
 void drawObj(int vertex_count, int face_count, glm::vec3* vertices, glm::vec3* normals, glm::ivec3* faces);
 
 //OBJ2 FORMAT FUNCTIONS

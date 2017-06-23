@@ -13,6 +13,7 @@
  * on www.flamegpu.com website.
  * 
  */
+#define  _CRT_SECURE_NO_WARNINGS
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,6 +28,41 @@ void allocateObjModel(int vertex_count, int face_count, glm::vec3** vertices, gl
 	*vertices = (glm::vec3*)malloc(vertex_count*sizeof(glm::vec3));
 	*normals = (glm::vec3*)malloc(vertex_count*sizeof(glm::vec3));
 	*faces = (glm::ivec3*)malloc(face_count*sizeof(glm::ivec3));
+}
+void allocateObjModel(const char *name, int *v_count, int *f_count, glm::vec3** vertices, glm::vec3** normals, glm::ivec3** faces){
+    (*v_count) = 0;
+    (*f_count) = 0;
+
+    FILE* file = fopen(name, "r");
+    if (file == NULL){
+        printf("Could not open file '%s'!\n", name);
+        return;
+    }
+
+    char text[100];
+    float x, y, z;
+    int f1a, f1b, f2a, f2b, f3a, f3b;
+    while (!feof(file)) {
+        if (fscanf(file, "%s", text) == 1){
+            if (strcmp(text, VERTEX_IDENTIFIER) == 0){
+                if (fscanf(file, "%f %f %f", &x, &y, &z) == 3){
+                    (*v_count)++;
+                }
+            }
+            else if (strcmp(text, VERTEX_NORMAL_IDENTIFIER) == 0){
+                fscanf(file, "%f %f %f", &x, &y, &z);
+            }
+            else if (strcmp(text, FACE_IDENTIFIER) == 0){
+                if (fscanf(file, "%i//%i %i//%i %i//%i", &f1a, &f1b, &f2a, &f2b, &f3a, &f3b) == 6){
+                    (*f_count)++;
+                }
+            }
+        }
+    }
+
+    *vertices = (glm::vec3*)malloc((*v_count)*sizeof(glm::vec3));
+    *normals = (glm::vec3*)malloc((*v_count)*sizeof(glm::vec3));
+    *faces = (glm::ivec3*)malloc((*f_count)*sizeof(glm::ivec3));
 }
 
 void cleanupObjModel(glm::vec3** vertices, glm::vec3** normals, glm::ivec3** faces){
@@ -120,7 +156,36 @@ void scaleObj(float scale_factor, int vertex_count, glm::vec3* vertices){
 		vertices[i][2] *= scale_factor;
 	}
 }
+void scaleObjToHeight(float height, int vertex_count, glm::vec3* vertices){
+    //assumes Min is at the origin, intended for use with pedestrian model
+    float max = -FLT_MAX;
+    int i;
+    for (i = 0; i < vertex_count; i++){
+        max = glm::max(max, vertices[i].z);//Flame has Z up, not Y up
+    }
+    float scale_factor = max / height;
+    for (i = 0; i < vertex_count; i++){
+        vertices[i][0] *= scale_factor;
+        vertices[i][1] *= scale_factor;
+        vertices[i][2] *= scale_factor;
+    }
+}
 
+void scaleObjwithOffset(float scale_factor, glm::vec3 offset, int vertex_count, glm::vec3* vertices)
+{
+    int i;
+    for (i = 0; i < vertex_count; i++){
+        vertices[i][0] = ((vertices[i][0] + offset[0]) * scale_factor);// -1.0f;
+        vertices[i][1] = ((vertices[i][1] + offset[1]) * scale_factor);// -1.0f;
+        vertices[i][2] = ((vertices[i][2] + offset[2]) * scale_factor);// -1.0f;
+    }
+    glm::vec3 min = glm::vec3(FLT_MAX);
+    glm::vec3 max = glm::vec3(-FLT_MAX);
+    for (i = 0; i < vertex_count; i++){
+        min = glm::min(vertices[i], min);
+        max = glm::max(vertices[i], max);
+    }
+}
 void drawObj(int vertex_count, int face_count, glm::vec3* vertices, glm::vec3* normals, glm::ivec3* faces){
 	int f;
 	glBegin(GL_TRIANGLES);

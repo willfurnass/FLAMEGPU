@@ -15,6 +15,7 @@
  */
 // includes, project
 #include <stdlib.h>
+#define  _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <string.h>
 #include <cmath>
@@ -40,7 +41,6 @@ int text_position = 0;
 //external FLAME GPU functions from header.h
 extern int get_agent_agent_MAX_count();
 extern int get_agent_agent_default_count();
-extern int get_agent_navmap_static_count();
 
 
 //private prototypes
@@ -424,9 +424,6 @@ void drawInfoDisplay(int width, int height)
 		printInfoLine(output_buffer);
 
 		sprintf(output_buffer,"Maximum Pedestrian Agent Count: %i", get_agent_agent_MAX_count());
-		printInfoLine(output_buffer);
-
-		sprintf(output_buffer,"Navigation Map Grid Cells: %i", get_agent_navmap_static_count());
 		printInfoLine(output_buffer);
 
 		sprintf(output_buffer,"Emmission Rate: %f", getEmmisionRateExit1());

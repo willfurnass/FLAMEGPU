@@ -56,14 +56,14 @@ __global__ void output_pedestrians_to_TBO(xmachine_memory_agent_list* agents, gl
 	int index = __mul24(blockIdx.x,blockDim.x) + threadIdx.x;
 
 	data1[index].x = agents->x[index];
-	data1[index].y = agents->y[index];
-	data1[index].z = agents->animate[index];
-	data1[index].w = agents->height[index];
+	data1[index].y = agents->z[index];
+	data1[index].z = agents->y[index];
+    data1[index].w = agents->animate[index];
 
 	data2[index].x = agents->velx[index];
 	data2[index].y = agents->vely[index];
 	data2[index].z = (float)agents->exit_no[index];
-	data2[index].w = 0.0;
+    data2[index].w = agents->height[index];
 }
 
 

@@ -16,9 +16,6 @@
     <CudaCompile Include="src\visualisation\CustomVisualisation.cu">
       <Filter>visualisation</Filter>
     </CudaCompile>
-    <CudaCompile Include="src\visualisation\NavMapPopulation.cu">
-      <Filter>visualisation</Filter>
-    </CudaCompile>
     <CudaCompile Include="src\visualisation\PedestrianPopulation.cu">
       <Filter>visualisation</Filter>
     </CudaCompile>
@@ -56,6 +53,7 @@
     <ClInclude Include="src\visualisation\PedestrianPopulation.h">
       <Filter>visualisation</Filter>
     </ClInclude>
+    <ClInclude Include="src\Graph.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\FLAMEGPU\templates\FLAMEGPU_kernals.xslt">
@@ -122,6 +120,7 @@
     <ClCompile Include="src\visualisation\PedestrianPopulation.cpp">
       <Filter>visualisation</Filter>
     </ClCompile>
+    <ClCompile Include="src\Graph.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\dynamic\_README.txt">
