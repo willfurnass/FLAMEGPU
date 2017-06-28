@@ -510,33 +510,65 @@ void singleIteration(){
 	<xsl:for-each select="gpu:xmodel/xmml:layers/xmml:layer">
 	/* Layer <xsl:value-of select="position()"/>*/
 	<xsl:for-each select="gpu:layerFunction">
-#if defined(INSTRUMENT_AGENT_FUNCTIONS) &amp;&amp; INSTRUMENT_AGENT_FUNCTIONS
-	cudaEventRecord(instrument_start);
-#endif
-	<xsl:variable name="function" select="xmml:name"/><xsl:variable name="stream_num" select="position()"/><xsl:for-each select="../../../xmml:xagents/gpu:xagent/xmml:functions/gpu:function[xmml:name=$function]">
-	<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>(stream<xsl:value-of select="$stream_num"/>);
-#if defined(INSTRUMENT_AGENT_FUNCTIONS) &amp;&amp; INSTRUMENT_AGENT_FUNCTIONS
-	cudaEventRecord(instrument_stop);
-	cudaEventSynchronize(instrument_stop);
-	cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
-	printf("Instrumentation: <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/> = %f (ms)\n", instrument_milliseconds);
-#endif
-	</xsl:for-each></xsl:for-each>cudaDeviceSynchronize();
+    <xsl:variable name="function" select="xmml:name"/>
+    <xsl:choose>
+        <!--Test if layer fn is an agent function-->
+        <xsl:when test="../../../xmml:xagents/gpu:xagent/xmml:functions/gpu:function[xmml:name=$function]">
+            <!--Normal Agent fn handling-->
+            <xsl:variable name="stream_num" select="position()"/><xsl:for-each select="../../../xmml:xagents/gpu:xagent/xmml:functions/gpu:function[xmml:name=$function]">
+        #if defined(INSTRUMENT_AGENT_FUNCTIONS) &amp;&amp; INSTRUMENT_AGENT_FUNCTIONS
+            cudaEventRecord(instrument_start);
+        #endif
+            <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>(stream<xsl:value-of select="$stream_num"/>);
+        #if defined(INSTRUMENT_AGENT_FUNCTIONS) &amp;&amp; INSTRUMENT_AGENT_FUNCTIONS
+            cudaEventRecord(instrument_stop);
+            cudaEventSynchronize(instrument_stop);
+            cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
+            printf("Instrumentation: <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/> = %f (ms)\n", instrument_milliseconds);
+        #endif
+            </xsl:for-each>
+        </xsl:when>        
+        <!--Test if layer fn is an step function-->
+        <xsl:when test="../../../gpu:environment/gpu:stepFunctions/gpu:stepFunction[gpu:name=$function]">
+            <!--Normal Step fn handling-->
+        #if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
+            cudaEventRecord(instrument_start);
+        #endif
+        <xsl:value-of select="xmml:name"/>();<xsl:text>
+        </xsl:text>
+        #if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
+            cudaEventRecord(instrument_stop);
+            cudaEventSynchronize(instrument_stop);
+            cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
+            printf("Instrumentation: <xsl:value-of select="xmml:name"/> = %f (ms)\n", instrument_milliseconds);
+        #endif
+        </xsl:when>
+        <!--Else, give runtime compile error-->
+        <xsl:otherwise>
+#error Layer function '<xsl:value-of select="xmml:name"/>' was not found.
+        </xsl:otherwise>
+    </xsl:choose></xsl:for-each>cudaDeviceSynchronize();
   </xsl:for-each>
+  <!-- Backwards compatibility handling of step functions-->
     
-    /* Call all step functions */
-	<xsl:for-each select="gpu:xmodel/gpu:environment/gpu:stepFunctions/gpu:stepFunction">
-#if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
-	cudaEventRecord(instrument_start);
-#endif
-	<xsl:value-of select="gpu:name"/>();<xsl:text>
-	</xsl:text>
-#if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
-	cudaEventRecord(instrument_stop);
-	cudaEventSynchronize(instrument_stop);
-	cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
-	printf("Instrumentation: <xsl:value-of select="gpu:name"/> = %f (ms)\n", instrument_milliseconds);
-#endif</xsl:for-each>
+    /* Call all remaining step functions */
+    <xsl:for-each select="gpu:xmodel/gpu:environment/gpu:stepFunctions/gpu:stepFunction">
+    <xsl:variable name="function" select="gpu:name"/>
+    <!--Only call step function if it has not already been called during a layer-->
+    <xsl:if test="not(../../../xmml:layers/xmml:layer/gpu:layerFunction[xmml:name=$function])">
+    #if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
+        cudaEventRecord(instrument_start);
+    #endif
+        <xsl:value-of select="gpu:name"/>();<xsl:text>
+        </xsl:text>
+    #if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
+        cudaEventRecord(instrument_stop);
+        cudaEventSynchronize(instrument_stop);
+        cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
+        printf("Instrumentation: <xsl:value-of select="gpu:name"/> = %f (ms)\n", instrument_milliseconds);
+    #endif
+    </xsl:if>
+    </xsl:for-each>
 
 #if defined(OUTPUT_POPULATION_PER_ITERATION) &amp;&amp; OUTPUT_POPULATION_PER_ITERATION
 	// Print the agent population size of all agents in all states
