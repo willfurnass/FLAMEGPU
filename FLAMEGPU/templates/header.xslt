@@ -455,7 +455,7 @@ typedef enum {
   
 /* global constant variables */
 <xsl:for-each select="gpu:xmodel/gpu:environment/gpu:constants/gpu:variable">
-__constant__ <xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="xmml:arrayLength">[<xsl:value-of select="xmml:arrayLength"/>]</xsl:if>;
+extern __constant__ <xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="xmml:arrayLength">[<xsl:value-of select="xmml:arrayLength"/>]</xsl:if>;
 </xsl:for-each>
     
 <xsl:for-each select="gpu:xmodel/gpu:environment/gpu:constants/gpu:variable">
