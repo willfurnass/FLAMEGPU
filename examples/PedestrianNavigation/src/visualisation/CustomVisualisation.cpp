@@ -29,6 +29,7 @@
 #include "NavMapPopulation.h"
 #include "MenuDisplay.h"
 #include "GlobalsController.h"
+#include <string>
 
 int window_width = 800;
 int window_height = 600;
@@ -50,6 +51,7 @@ int av_frames;
 extern void initVisualisation();
 extern void runVisualisation();
 
+extern void setNavPath(const char *navPath);
 
 extern void initVisualisation()
 {
@@ -70,9 +72,11 @@ extern void initVisualisation()
     if(FALSE == initGL()) {
         return;
     }
-
+    std::string modelPath = std::string("C:\\Users\\rob\\recastgit\\RecastDemo\\Bin\\Meshes\\rotate_underground.obj");
+    std::string navPath = modelPath + std::string(".pnav");
 	//load nav map model
-	initNavMapPopulation();
+    initNavMapPopulation(modelPath.c_str());
+    setNavPath(navPath.c_str());
 
 	//load pedestrians
 	initPedestrianPopulation();

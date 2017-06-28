@@ -55,6 +55,7 @@ static void HandleCUDAError(const char *file,
 #define MESSAGE_RADIUS d_message_pedestrian_location_radius
 #define MIN_DISTANCE 0.0001f
 __constant__ float HUMAN_HEIGHT;
+__constant__ float NEXT_EDGE_THRESHOLD;
 
 //#define NUM_EXITS 7
 
@@ -68,16 +69,22 @@ std::default_random_engine rng;
 std::uniform_real_distribution<float> floatDist(0,1);
 extern void rescalePedestrianPop(float newHeight);//PedestrianPopulation.cpp
 extern void rescaleNavMapPopulation(float scaleFactor, glm::vec3 offset);//NavMapPopulation.cpp
+std::string navPath;
+void setNavPath(const char *_navPath)
+{
+    navPath = _navPath;
+}
 __FLAME_GPU_INIT_FUNC__ void loadGraph()
 {
     void *ptr;
-    //h_nav.load("polyNav.bin");
-    h_nav.load("C:\\Users\\rob\\recastgit\\RecastDemo\\Bin\\polyNav.bin");
+    h_nav.load(navPath.c_str());
     assert(h_nav.vertex.entryCount > 0);
     //Scale the locations to FLAME range min(-1) max(1)
     //Find location min and max
     glm::vec3 min = glm::vec3(FLT_MAX);
     glm::vec3 max = glm::vec3(-FLT_MAX);
+    glm::vec3 min2 = glm::vec3(FLT_MAX);
+    glm::vec3 max2 = glm::vec3(-FLT_MAX);
     for (unsigned int i = 0; i < h_nav.point.count; ++i)
     {//only compare points, vertex loc's are duplication of this
         min = glm::min(min, h_nav.point.loc[i]);
@@ -87,24 +94,28 @@ __FLAME_GPU_INIT_FUNC__ void loadGraph()
     float scaleFactor1D = glm::min(scaleFactor.x, scaleFactor.z);
     scaleFactor = glm::vec3(scaleFactor1D);//Uniform scaling
     //To scale we multiply by 'scaleFactor' and subtractMin
+    glm::vec3 centerY = glm::vec3(0, 1.0f - (((max.y - min.y)*scaleFactor1D) / 2.0f), 0);//This extra offset centers the model on the Y axis, this makes it work better with FLAME's camera
     for (unsigned int i = 0; i < h_nav.point.count; ++i)
     {
-        h_nav.point.loc[i] = ((h_nav.point.loc[i] - min) *scaleFactor) -glm::vec3(1.0f);
+        h_nav.point.loc[i] = ((h_nav.point.loc[i] - min) *scaleFactor) - glm::vec3(1.0f) + centerY;
+        min2 = glm::min(min2, h_nav.point.loc[i]);
+        max2 = glm::max(max2, h_nav.point.loc[i]);
     }
     for (unsigned int i = 0; i < h_nav.vertex.count; ++i)
     {
-        h_nav.vertex.loc1[i] = ((h_nav.vertex.loc1[i] - min) *scaleFactor) - glm::vec3(1.0f);
-        h_nav.vertex.loc2[i] = ((h_nav.vertex.loc2[i] - min) *scaleFactor) - glm::vec3(1.0f);
-        assert(h_nav.vertex.loc1[i].y >= -1);
-        assert(h_nav.vertex.loc2[i].y >= -1);
-        assert(h_nav.vertex.loc1[i].y <= -1);
-        assert(h_nav.vertex.loc2[i].y <= -1);
+        h_nav.vertex.loc1[i] = ((h_nav.vertex.loc1[i] - min) *scaleFactor) - glm::vec3(1.0f) + centerY;
+        h_nav.vertex.loc2[i] = ((h_nav.vertex.loc2[i] - min) *scaleFactor) - glm::vec3(1.0f) + centerY;
     }
+    max = (max*scaleFactor) - glm::vec3(1.0f);
+    printf("max(%.3f, %.3f, %.3f)\n", max.x, max.y, max.z);
+    printf("max2(%.3f, %.3f, %.3f)\n", max2.x, max2.y, max2.z);
     //Setup human height on device
     float humanHeight = 1.8288f*scaleFactor1D;//6ft in metres * scale factor
+    float nextEdgeThreshold = 0.005*scaleFactor1D;//10cm * scale factor//Why does this need to be so small???
     rescalePedestrianPop(humanHeight);
-    rescaleNavMapPopulation(scaleFactor1D, -(min + glm::vec3(1.0f / scaleFactor1D)));//Include offset for moving to -1,+1 range
+    rescaleNavMapPopulation(scaleFactor1D, -(min + glm::vec3(1.0f / scaleFactor1D) - (centerY/scaleFactor1D)));//Include offset for moving to -1,+1 range
     CUDA_CALL(cudaMemcpyToSymbol(HUMAN_HEIGHT, &humanHeight, sizeof(float)));
+    CUDA_CALL(cudaMemcpyToSymbol(NEXT_EDGE_THRESHOLD, &nextEdgeThreshold, sizeof(float)));
     //Copy to device
     Graph *dp_nav;
     CUDA_CALL(cudaGetSymbolAddress((void**)&dp_nav, d_nav));
@@ -159,9 +170,9 @@ __FLAME_GPU_INIT_FUNC__ void loadGraph()
     //Point
     CUDA_CALL(cudaMemcpy(&dp_nav->point.count, &h_nav.point.count, sizeof(unsigned int), cudaMemcpyHostToDevice));
 
-    CUDA_CALL(cudaMalloc(&ptr, sizeof(unsigned int)*h_nav.point.count));
+    CUDA_CALL(cudaMalloc(&ptr, sizeof(glm::vec3)*h_nav.point.count));
     CUDA_CALL(cudaMemcpy(&dp_nav->point.loc, &ptr, sizeof(void*), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(ptr, h_nav.point.loc, sizeof(unsigned int)*h_nav.point.count, cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaMemcpy(ptr, h_nav.point.loc, sizeof(glm::vec3)*h_nav.point.count, cudaMemcpyHostToDevice));
 }
 __FLAME_GPU_EXIT_FUNC__ void freeGraph()
 {
@@ -201,8 +212,11 @@ __FLAME_GPU_EXIT_FUNC__ void freeGraph()
     CUDA_CALL(cudaFree(ptr));
     h_nav.free();
 }
+extern int h_xmachine_memory_agent_count;
 __FLAME_GPU_STEP_FUNC__ void spawnAgents()
 {
+    if (h_xmachine_memory_agent_count >= 5000)
+        return;
     int exitState[7] = { getStateExit1(), getStateExit2(), getStateExit3(), getStateExit4(), getStateExit5(), getStateExit6(), getStateExit7() };
     float emissionRate[7] = { getEmmisionRateExit1(), getEmmisionRateExit2(), getEmmisionRateExit3(), getEmmisionRateExit4(), getEmmisionRateExit5(), getEmmisionRateExit6(), getEmmisionRateExit7() };
     float exitProbabilitities[7] = { getProbabilityExit1(), getProbabilityExit2(), getProbabilityExit3(), getProbabilityExit4(), getProbabilityExit5(), getProbabilityExit6(), getProbabilityExit7() };
@@ -215,6 +229,7 @@ __FLAME_GPU_STEP_FUNC__ void spawnAgents()
     for (unsigned int i = 1; i < 7; ++i)
         exitProbabilitities[i] = (exitState[i] * exitProbabilitities[i] * (int)(i < h_nav.vertex.entryCount));
     //Attempt to spawn at each exit
+    static int qt = 0;
     for (unsigned int i = 0; i < h_nav.vertex.entryCount&&i<7;++i)
     {
         //If exit is open
@@ -222,14 +237,15 @@ __FLAME_GPU_STEP_FUNC__ void spawnAgents()
         {
             //Select an exit
             float exitPart = exitDist(rng);
-            unsigned int exit = 6;//Start at last exit
-            for (; exit < 7; --exit)
+            unsigned int exit = 0;
+            for (; exit < h_nav.vertex.entryCount; ++exit)
             {
-                if (exitPart < exitProbabilitities[exit])
+                if (exitPart < exitProbabilitities[exit] && exitProbabilitities[exit]!=0.0f)
                     break;
             }
-            if (exit == UINT_MAX || exit == i)
+            if (exit == h_nav.vertex.entryCount || exit == i)
                 continue;//No exits open?
+
             //Calc agent location
             glm::vec3 loc = glm::mix(h_nav.vertex.loc1[i], h_nav.vertex.loc2[i], 0.5);
             //Create agent
@@ -240,7 +256,7 @@ __FLAME_GPU_STEP_FUNC__ void spawnAgents()
             agent.current_edge = h_nav.vertex.routes[exit][i];
             agent.next_edge = h_nav.vertex.routes[exit][h_nav.edge.destination[agent.current_edge]];
             agent.exit_no = exit;
-            agent.height = 1.0f;//?
+            agent.height = qt++;//?
             agent.lod = 1.0f;
             agent.x = loc.x;
             agent.y = loc.y;
@@ -249,6 +265,7 @@ __FLAME_GPU_STEP_FUNC__ void spawnAgents()
             agent.steer_y = 0.0f;
             agent.velx = 0.0f;
             agent.vely = 0.0f;
+            //printf("Agent(Entry: %d, Exit: %d, Loc(%.3f, %.3f, %.3f), curr: %d, next: %d\n", i, exit, loc.x, loc.y, loc.z, agent.current_edge, agent.next_edge);
             h_add_agent_agent_default(&agent);
         }
     }
@@ -423,6 +440,34 @@ __device__ bool insideConvexPoly3D(unsigned int beforeFirstPoint, unsigned int a
     //https://github.com/juj/MathGeoLib/blob/master/src/Geometry/Polygon.cpp#L361
     return false;
 }
+__device__ float distPointLine(const glm::vec3 &line1, const glm::vec3 &line2, const glm::vec3 &point)
+{
+    //return abs(((line2.y-line1.y)*point.x)-((line2.x-line1.x)*point.y)+(line2.x*line1.y)-(line2.y-line1.x))/distance(line1, line2);//2D
+    {//http://www.randygaul.net/2014/07/23/distance-point-to-line-segment/
+        glm::vec3 n = line2 - line1;
+        glm::vec3 pa = line1 - point;
+        float c = dot(n, pa);
+        if (c > 0.0f)//Nearest point goes past A
+            return dot(pa,pa);
+        glm::vec3 bp = point - line2;
+        if (dot(n, bp) > 0.0f)//Nearest point goes past B
+            return dot(bp,bp);
+        glm::vec3 e = pa - n * (c / dot(n, n));
+        return dot(e, e);
+    }
+
+    //return length(cross(line2 - line1, line1 - point)) / length(line2 - line1);//Infinite
+}
+__device__ glm::vec3 closestPointonLineSegment(const glm::vec3 &line1, const glm::vec3 &line2, const glm::vec3 &point)
+{
+    glm::vec3 line = line2 - line1;
+    float len = length(line);
+    line = normalize(line);
+    glm::vec3 v = point - line1;
+    float d = dot(v, line);
+    d = glm::clamp<float>(d, 0, len);
+    return line1 + line*d;
+}
 /**
 * force_flow FLAMEGPU Agent Function
 * Automatically generated using functions.xslt
@@ -438,36 +483,49 @@ __FLAME_GPU_FUNC__ int force_flow(xmachine_memory_agent* agent, RNG_rand48* rand
     unsigned int destVert = d_nav.edge.destination[agent->current_edge];
     glm::vec3 dest = glm::mix(d_nav.vertex.loc1[destVert], d_nav.vertex.loc2[destVert], 0.5);
     glm::vec3 agentLoc = glm::vec3(agent->x, agent->y, agent->z);
+    dest = glm::mix(dest, closestPointonLineSegment(d_nav.vertex.loc1[destVert], d_nav.vertex.loc2[destVert], agentLoc), 0.5);
+    assert(agent->x >= -1.0);
+    //assert(agent->y >= -1.0);
+    assert(agent->z >= -1.0);
+    assert(agent->x <= 1.01);
+    //assert(agent->y <= -0.99);
+    assert(agent->z <= -0.454);
     //If agent is within the current edge poly
     glm::vec2 collision_force = glm::vec2(0);
+    //Calculate collision force
     if(!insideConvexPoly3D2D(pointBegin, pointEnd, &agentLoc))
+    {        
+        //Apply collision force
+        //Currently we just take midpoint between the two edges being navigated
+        unsigned int srcVert = d_nav.edge.source[agent->current_edge];
+        glm::vec3 centerLoc = glm::mix(glm::mix(d_nav.vertex.loc1[srcVert], d_nav.vertex.loc2[srcVert], 0.5), dest, 0.01);
+        collision_force = glm::normalize(glm::vec2(centerLoc.x - agent->x, centerLoc.z - agent->z));
+    }
+    else
     {
-        if (agent->next_edge == UINT_MAX)
-        {
-            if (!exitIsOpen(agent->exit_no))
-                agent->exit_no = getNewExitLocation(rand48);
-            else
-                return 1;//Kill agent, reached exit (or gone out of bounds on final edge, close enough)
-        }
-        currentPoly = d_nav.edge.poly[agent->next_edge];
-        pointBegin = d_nav.poly.first_point_index[currentPoly];
-        pointEnd = d_nav.poly.first_point_index[currentPoly + 1];
+        //currentPoly = d_nav.edge.poly[agent->next_edge];
+        //pointBegin = d_nav.poly.first_point_index[currentPoly];
+        //pointEnd = d_nav.poly.first_point_index[currentPoly + 1];
         //If agent is within next edge
-        if (insideConvexPoly3D2D(pointBegin, pointEnd, &agentLoc))
+        float d = distPointLine(d_nav.vertex.loc1[destVert], d_nav.vertex.loc2[destVert], agentLoc);
+        if (d<NEXT_EDGE_THRESHOLD)
         {
-            //Progress agent
-            agent->current_edge = agent->next_edge;
-            agent->next_edge = d_nav.vertex.routes[agent->exit_no][d_nav.edge.destination[agent->current_edge]]; 
-            destVert = d_nav.edge.destination[agent->current_edge];
-            dest = glm::mix(d_nav.vertex.loc1[destVert], d_nav.vertex.loc2[destVert], 0.5);
-        }
-        else
-        {
-            //Apply collision force
-            //Currently we just take midpoint between the two edges being navigated
-            unsigned int srcVert = d_nav.edge.source[agent->current_edge];
-            glm::vec3 centerLoc = glm::mix(glm::mix(d_nav.vertex.loc1[srcVert], d_nav.vertex.loc2[srcVert], 0.5), dest, 0.5);
-            collision_force = glm::normalize(glm::vec2(centerLoc.x-agent->x, centerLoc.z-agent->z));
+            if (agent->next_edge == UINT_MAX)
+            {
+                if (!exitIsOpen(agent->exit_no))
+                    agent->exit_no = getNewExitLocation(rand48);
+                else
+                    return 1;//Kill agent, reached exit (or gone out of bounds on final edge, close enough)
+            }
+            else
+            {
+                //Progress agent
+                agent->current_edge = agent->next_edge;
+                agent->next_edge = d_nav.vertex.routes[agent->exit_no][d_nav.edge.destination[agent->current_edge]];
+                destVert = d_nav.edge.destination[agent->current_edge];
+                dest = glm::mix(d_nav.vertex.loc1[destVert], d_nav.vertex.loc2[destVert], 0.5);
+                dest = glm::mix(dest, closestPointonLineSegment(d_nav.vertex.loc1[destVert], d_nav.vertex.loc2[destVert], agentLoc), 0.01);
+            }
         }
     }
 
@@ -527,16 +585,11 @@ __FLAME_GPU_FUNC__ int move(xmachine_memory_agent* agent){
 
 
 	//bound by wrapping
-	if (agent->x < -1.0f)
-		agent->x+=2.0f;
-	if (agent->x > 1.0f)
-		agent->x-=2.0f;
-	if (agent->z < -1.0f)
-		agent->z+=2.0f;
-	if (agent->z > 1.0f)
-		agent->z-=2.0f;
     assert(!isnan(agent->x));
     assert(!isnan(agent->z));
+    agent->x = glm::clamp<float>(agent->x, -1, +1);
+    agent->y = glm::clamp<float>(agent->y, -1, +1);
+    agent->z = glm::clamp<float>(agent->z, -1, +1);
 
     //Update vertical pos (plane-line intersection)
     //https://stackoverflow.com/a/18543221/1646387

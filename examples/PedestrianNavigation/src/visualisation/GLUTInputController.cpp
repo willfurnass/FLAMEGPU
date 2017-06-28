@@ -25,6 +25,7 @@
 #include "GlobalsController.h"
 #include "MenuDisplay.h"
 #include <ctype.h>
+#include <glm/detail/type_vec3.hpp>
 
 //viewpoint vectors and eye distance
 float eye[3];
@@ -47,7 +48,7 @@ int zoom_key = 0;
 #define ROTATION_SCALE 0.01f
 #define ZOOM_SCALE 0.01f
 
-#define MAX_ZOOM 0.000000001f
+#define MAX_ZOOM 0.00001f
 #define MIN_PHI 0.0f
 
 #define PI 3.14
@@ -76,6 +77,20 @@ void initInputConroller()
 
 	theta = 3.14159265f;
 	phi = 1.57079633f;
+    //Debugging init
+    //eye[0] = 0.0326488614;
+    //eye[1] = -0.690132260;
+    //eye[2] = 0.0197445489;
+    //up[0] = -0.0805824921;
+    //up[1] = -0.985482097;
+    //up[2] = 0.149437234;
+    //look[0] = 0.0323891826;
+    //look[1] = -0.693307996;
+    //look[2] = 0.000000000;
+    //theta = 6.20159721;
+    //phi = 1.41079724;
+    //eye_distance = 0.0199999996;
+    //updateRotationComponents();
 }
 
 

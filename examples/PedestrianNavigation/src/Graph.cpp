@@ -62,7 +62,11 @@ void Graph::load(const char *path)
 {
     this->free();//This might be a bad idea if the struct is shared
     std::ifstream infile(path, std::ifstream::binary);
-    assert(infile.is_open());
+    if (!infile.is_open())
+    {
+        fprintf(stderr, "File '%s' does not exist.\n", path);
+        exit(EXIT_FAILURE);
+    }
     infile.read((char*)&this->vertex.count, sizeof(unsigned int));
     infile.read((char*)&this->vertex.entryCount, sizeof(unsigned int));
 

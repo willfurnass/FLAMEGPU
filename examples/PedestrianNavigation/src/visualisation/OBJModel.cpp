@@ -71,7 +71,7 @@ void cleanupObjModel(glm::vec3** vertices, glm::vec3** normals, glm::ivec3** fac
 	free(*faces);
 }
 
-void loadObjFromFile(char* name, int vertex_count, int face_count, glm::vec3* vertices, glm::vec3* normals, glm::ivec3* faces){
+void loadObjFromFile(const char* name, int vertex_count, int face_count, glm::vec3* vertices, glm::vec3* normals, glm::ivec3* faces){
 	//placeholders
 	char text[100];
 	float x,y,z;
@@ -221,7 +221,7 @@ void xCleanupObjModel(glm::vec3** vertices, glm::vec3** normals, glm::ivec4** fa
 	free(*faces);
 }
 
-void xLoadObjFromFile(char* name, int vertex_count, int normal_count, int face_count, glm::vec3* vertices, glm::vec3* normals, glm::ivec4* faces){
+void xLoadObjFromFile(const char* name, int vertex_count, int normal_count, int face_count, glm::vec3* vertices, glm::vec3* normals, glm::ivec4* faces){
 	//placeholders
 	char text[100];
 	float x,y,z;

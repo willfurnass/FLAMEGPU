@@ -22,7 +22,7 @@
  * Initialises the navigation Map Population by loading model data and creating appropriate buffer objects and shaders
  * @param use_large_vbo determins if arrows should be instanced or displayed using a single large vbo
  */
-void initNavMapPopulation();
+void initNavMapPopulation(const char * modelPath);
 
 /** renderNavMapModel
  * Renders the navigation Map Population by outputting agent data to a texture buffer object and then using vertex texture instancing 

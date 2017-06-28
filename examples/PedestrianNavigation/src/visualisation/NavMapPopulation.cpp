@@ -63,11 +63,11 @@ void createNavMapBufferObjects();
  */
 void initNavMapShader();
 
-void initNavMapPopulation()
+void initNavMapPopulation(const char * modelPath)
 {
 	////load cone model
-	allocateObjModel("C:\\Users\\rob\\recastgit\\RecastDemo\\Bin\\Meshes\\rotate_underground.obj", &arrow_v_count, &arrow_f_count, &arrow_vertices, &arrow_normals, &arrow_faces);
-    loadObjFromFile("C:\\Users\\rob\\recastgit\\RecastDemo\\Bin\\Meshes\\rotate_underground.obj", arrow_v_count, arrow_f_count, arrow_vertices, arrow_normals, arrow_faces);
+    allocateObjModel(modelPath, &arrow_v_count, &arrow_f_count, &arrow_vertices, &arrow_normals, &arrow_faces);
+    loadObjFromFile(modelPath, arrow_v_count, arrow_f_count, arrow_vertices, arrow_normals, arrow_faces);
 
 	//scaleObj(scale, arrow_v_count, arrow_vertices);		 
 
@@ -82,7 +82,7 @@ void rescaleNavMapPopulation(float scaleFactor, glm::vec3 offset)
     glBindBuffer(GL_ARRAY_BUFFER, arrow_verts_vbo);
     glBufferData(GL_ARRAY_BUFFER, arrow_v_count*sizeof(glm::vec3), arrow_vertices, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    for (unsigned int i = 0; i < arrow_f_count; ++i)
+    for (unsigned int i = 0; i < (unsigned int)arrow_f_count; ++i)
     {
         assert(arrow_faces[i].x < arrow_v_count);
         assert(arrow_faces[i].y < arrow_v_count);
@@ -105,7 +105,7 @@ inline static void HandleGLError(const char *file, int line) {
 
 #define GL_CALL( err ) err //;HandleGLError(__FILE__, __LINE__)
 #define GL_CHECK() (HandleGLError(__FILE__, __LINE__))
-bool renderModel = true;
+bool renderModel = false;
 void toggleRenderModel()
 {
     renderModel = !renderModel;
@@ -127,12 +127,13 @@ void renderNavMapPopulation()
         GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
         GL_CALL(glUseProgram(0));
     }
+    glDisable(GL_LIGHTING);
     ////Render the mesh
     for (unsigned int poly = 0; poly < h_nav.poly.count; ++poly)
     {//For each poly
         GL_CALL(glBegin(GL_LINE_LOOP));
-        for (unsigned int edge = h_nav.poly.first_point_index[poly]; edge < h_nav.poly.first_point_index[poly+1]; ++edge)
-        {//For each vertex
+        for (unsigned int edge = h_nav.poly.first_point_index[poly]; edge < h_nav.poly.first_point_index[poly + 1]; ++edge)
+        {//For each vertexv
             GL_CALL(glColor3f(0, 0, 0));//Black
             GL_CALL(glVertex3f(h_nav.point.loc[edge].x, h_nav.point.loc[edge].z, h_nav.point.loc[edge].y));
         }
