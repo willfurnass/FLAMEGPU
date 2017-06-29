@@ -277,12 +277,13 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <Text Include="src\dynamic\_README.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\model\functions.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Console|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Console|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <CudaCompile Include="src\model\functions.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Console|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Console|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">false</ExcludedFromBuild>
+      <FileType>CppCode</FileType>
+    </CudaCompile>
     <ClCompile Include="src\visualisation\BufferObjects.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Console|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Console|x64'">true</ExcludedFromBuild>

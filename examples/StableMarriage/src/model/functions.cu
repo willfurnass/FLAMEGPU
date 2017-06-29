@@ -19,6 +19,7 @@
 #define _FLAMEGPU_FUNCTIONS
 
 #include <header.h>
+#include <cstdio>
 
 
 

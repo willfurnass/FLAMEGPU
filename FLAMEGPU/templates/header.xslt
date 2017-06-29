@@ -473,6 +473,32 @@ extern const <xsl:value-of select="xmml:type"/>* get_<xsl:value-of select="xmml:
 extern <xsl:value-of select="xmml:type"/><xsl:text> h_env_</xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="xmml:arrayLength">[<xsl:value-of select="xmml:arrayLength"/>]</xsl:if>;
 </xsl:for-each>
 
+/* Agent count constants */
+<xsl:for-each select="gpu:xmodel/xmml:xagents/gpu:xagent">
+extern __constant__ int d_xmachine_memory_<xsl:value-of select="xmml:name"/>_count;
+</xsl:for-each>
+/* Agent state count constants */
+<xsl:for-each select="gpu:xmodel/xmml:xagents/gpu:xagent/xmml:states/gpu:state">
+extern __constant__ int d_xmachine_memory_<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>_count;
+</xsl:for-each>
+
+/* Message constants */
+<xsl:for-each select="gpu:xmodel/xmml:messages/gpu:message">
+/* <xsl:value-of select="xmml:name"/> Message variables */
+<xsl:if test="gpu:partitioningNone or gpu:partitioningSpatial">/* Non partitioned and spatial partitioned message variables  */
+extern __constant__ int d_message_<xsl:value-of select="xmml:name"/>_count;         /**&lt; message list counter*/
+extern __constant__ int d_message_<xsl:value-of select="xmml:name"/>_output_type;   /**&lt; message output type (single or optional)*/
+</xsl:if><xsl:if test="gpu:partitioningSpatial">//Spatial Partitioning Variables
+extern __constant__ glm::vec3 d_message_<xsl:value-of select="xmml:name"/>_min_bounds;           /**&lt; min bounds (x,y,z) of partitioning environment */
+extern __constant__ glm::vec3 d_message_<xsl:value-of select="xmml:name"/>_max_bounds;           /**&lt; max bounds (x,y,z) of partitioning environment */
+extern __constant__ glm::ivec3 d_message_<xsl:value-of select="xmml:name"/>_partitionDim;           /**&lt; partition dimensions (x,y,z) of partitioning environment */
+extern __constant__ float d_message_<xsl:value-of select="xmml:name"/>_radius;                 /**&lt; partition radius (used to determin the size of the partitions) */
+</xsl:if><xsl:if test="gpu:partitioningDiscrete">//Discrete Partitioning Variables
+extern __constant__ int d_message_<xsl:value-of select="xmml:name"/>_range;     /**&lt; range of the discrete message*/
+extern __constant__ int d_message_<xsl:value-of select="xmml:name"/>_width;     /**&lt; with of the message grid*/
+</xsl:if>
+</xsl:for-each>
+
 /** getMaximumBound
  * Returns the maximum agent positions determined from the initial loading of agents
  * @return 	a three component float indicating the maximum x, y and z positions of all agents

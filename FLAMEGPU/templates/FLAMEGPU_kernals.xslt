@@ -92,10 +92,22 @@ __constant__ int d_message_<xsl:value-of select="xmml:name"/>_width;     /**&lt;
 </xsl:for-each>
 	
     
-//include each function file
-<xsl:for-each select="gpu:xmodel/gpu:environment/gpu:functionFiles">
-#include "<xsl:value-of select="xmml:file"/>"</xsl:for-each>
-    
+//prototype external agent methods
+<xsl:for-each select="gpu:xmodel/xmml:xagents/gpu:xagent/xmml:functions/gpu:function">
+__FLAME_GPU_FUNC__ int <xsl:value-of select="xmml:name"/>(xmachine_memory_<xsl:value-of select="../../xmml:name"/>* agent<xsl:if test="xmml:xagentOutputs/gpu:xagentOutput">, xmachine_memory_<xsl:value-of select="xmml:xagentOutputs/gpu:xagentOutput/xmml:xagentName"/>_list* <xsl:value-of select="xmml:xagentOutputs/gpu:xagentOutput/xmml:xagentName"/>_agents</xsl:if>
+<xsl:if test="xmml:inputs/gpu:input"><xsl:variable name="messagename" select="xmml:inputs/gpu:input/xmml:messageName"/>, xmachine_message_<xsl:value-of select="xmml:inputs/gpu:input/xmml:messageName"/>_list* <xsl:value-of select="xmml:inputs/gpu:input/xmml:messageName"/>_messages<xsl:for-each select="../../../../xmml:messages/gpu:message[xmml:name=$messagename]"><xsl:if test="gpu:partitioningSpatial">, xmachine_message_<xsl:value-of select="xmml:name"/>_PBM* partition_matrix</xsl:if></xsl:for-each></xsl:if>
+<xsl:if test="xmml:outputs/gpu:output">, xmachine_message_<xsl:value-of select="xmml:outputs/gpu:output/xmml:messageName"/>_list* <xsl:value-of select="xmml:outputs/gpu:output/xmml:messageName"/>_messages</xsl:if>
+<xsl:if test="gpu:RNG='true'">, RNG_rand48* rand48</xsl:if>);</xsl:for-each>
+//prototype external init functions
+<xsl:for-each select="gpu:xmodel/gpu:environment/gpu:initFunctions/gpu:initFunction">
+__FLAME_GPU_INIT_FUNC__ void <xsl:value-of select="gpu:name"/>();</xsl:for-each>
+//prototype external step functions
+<xsl:for-each select="gpu:xmodel/gpu:environment/gpu:stepFunctions/gpu:stepFunction">
+__FLAME_GPU_STEP_FUNC__ void <xsl:value-of select="gpu:name"/>();</xsl:for-each>
+//prototype external exit functions
+<xsl:for-each select="gpu:xmodel/gpu:environment/gpu:exitFunctions/gpu:exitFunction">
+__FLAME_GPU_EXIT_FUNC__ void <xsl:value-of select="gpu:name"/>();</xsl:for-each>
+
 /* Texture bindings */<xsl:for-each select="gpu:xmodel/xmml:messages/gpu:message"><xsl:if test="gpu:partitioningDiscrete or gpu:partitioningSpatial">
 /* <xsl:value-of select="xmml:name"/> Message Bindings */<xsl:for-each select="xmml:variables/gpu:variable"><xsl:choose>
 <xsl:when test="xmml:type='double'">texture&lt;int2, 1, cudaReadModeElementType&gt; tex_xmachine_message_<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>;</xsl:when>

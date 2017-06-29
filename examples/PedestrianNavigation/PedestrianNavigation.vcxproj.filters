@@ -95,9 +95,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\model\functions.c">
-      <Filter>model</Filter>
-    </ClCompile>
     <ClCompile Include="src\visualisation\BufferObjects.cpp">
       <Filter>visualisation</Filter>
     </ClCompile>
@@ -121,6 +118,9 @@
     </ClCompile>
     <ClCompile Include="src\visualisation\PedestrianPopulation.cpp">
       <Filter>visualisation</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model\functions.cu">
+      <Filter>model</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

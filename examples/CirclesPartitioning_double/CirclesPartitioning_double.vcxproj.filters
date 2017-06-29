@@ -65,11 +65,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\model\functions.c">
-      <Filter>model</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="src\dynamic\_README.txt">
       <Filter>dynamic</Filter>
     </Text>
@@ -86,5 +81,10 @@
     <Xsd Include="..\..\FLAMEGPU\schemas\XMMLGPU.xsd">
       <Filter>schemas</Filter>
     </Xsd>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\model\functions.cu">
+      <Filter>model</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
