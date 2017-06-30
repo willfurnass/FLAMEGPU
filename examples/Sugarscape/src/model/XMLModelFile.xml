@@ -3,9 +3,42 @@
         xmlns="http://www.dcs.shef.ac.uk/~paul/XMML">
   <name>Optional </name>
   <gpu:environment>
+    <gpu:constants>
+        <!--Agent state variables-->
+        <gpu:variable>
+            <type>int</type>
+            <name>AGENT_STATE_UNOCCUPIED</name>
+        </gpu:variable>
+        <gpu:variable>
+            <type>int</type>
+            <name>AGENT_STATE_OCCUPIED</name>
+        </gpu:variable>
+        <gpu:variable>
+            <type>int</type>
+            <name>AGENT_STATE_MOVEMENT_REQUESTED</name>
+        </gpu:variable>
+        <gpu:variable>
+            <type>int</type>
+            <name>AGENT_STATE_MOVEMENT_UNRESOLVED</name>
+        </gpu:variable>
+        <!--Growback variables-->
+        <gpu:variable>
+            <type>int</type>
+            <name>SUGAR_GROWBACK_RATE</name>
+        </gpu:variable>
+        <gpu:variable>
+            <type>int</type>
+            <name>SUGAR_MAX_CAPACITY</name>
+        </gpu:variable>
+    </gpu:constants>
     <gpu:functionFiles>
       <file>functions.c</file> 
     </gpu:functionFiles>
+    <gpu:initFunctions>
+        <gpu:initFunction>
+            <gpu:name>initEnv</gpu:name>
+        </gpu:initFunction>
+    </gpu:initFunctions>
   </gpu:environment>
   <xagents>
     <gpu:xagent>

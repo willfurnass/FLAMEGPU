@@ -19,16 +19,19 @@
 
 #include "header.h"
 
-//Agent state variables
-#define AGENT_STATE_UNOCCUPIED 0
-#define AGENT_STATE_OCCUPIED 1
-#define AGENT_STATE_MOVEMENT_REQUESTED 2
-#define AGENT_STATE_MOVEMENT_UNRESOLVED 3
 
-
-//Growback variables
-#define SUGAR_GROWBACK_RATE 1
-#define SUGAR_MAX_CAPACITY 4
+__FLAME_GPU_INIT_FUNC__ void initEnv()
+{
+    int a;
+    //Agent state variables
+    a = 0; set_AGENT_STATE_UNOCCUPIED(&a);
+    a = 1; set_AGENT_STATE_OCCUPIED(&a);
+    a = 2; set_AGENT_STATE_MOVEMENT_REQUESTED(&a);
+    a = 3; set_AGENT_STATE_MOVEMENT_UNRESOLVED(&a);
+    //Growback variables
+    a = 1; set_SUGAR_GROWBACK_RATE(&a);
+    a = 4; set_AGENT_STATE_UNOCCUPIED(&a);
+}
 
 __FLAME_GPU_FUNC__ int get_agent_x(){
 	return threadIdx.x + __mul24(blockIdx.x, blockDim.x);
