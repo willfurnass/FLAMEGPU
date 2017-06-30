@@ -380,34 +380,8 @@ __global__ void reorder_<xsl:value-of select="xmml:name"/>_agents(unsigned int* 
 	ordered_agents-><xsl:value-of select="xmml:name"/>[index] = unordered_agents-><xsl:value-of select="xmml:name"/>[old_pos];</xsl:otherwise></xsl:choose></xsl:for-each>
 }
 </xsl:if>
-  
-<xsl:if test="xmml:memory/gpu:variable/xmml:arrayLength">
-/** get_<xsl:value-of select="xmml:name"/>_agent_array_value
- *  Template function for accessing <xsl:value-of select="xmml:name"/> agent array memory variables. Assumes array points to the first element of the agents array values (offset by agent index)
- *  @param array Agent memory array
- *  @param index to lookup
- *  @return return value
- */
-template&lt;typename T&gt;
-__FLAME_GPU_FUNC__ T get_<xsl:value-of select="xmml:name"/>_agent_array_value(T *array, uint index){
-    return array[index*xmachine_memory_<xsl:value-of select="xmml:name"/>_MAX];
-}
-
-/** set_<xsl:value-of select="xmml:name"/>_agent_array_value
- *  Template function for setting <xsl:value-of select="xmml:name"/> agent array memory variables. Assumes array points to the first element of the agents array values (offset by agent index)
- *  @param array Agent memory array
- *  @param index to lookup
- *  @param return value
- */
-template&lt;typename T&gt;
-__FLAME_GPU_FUNC__ void set_<xsl:value-of select="xmml:name"/>_agent_array_value(T *array, uint index, T value){
-    array[index*xmachine_memory_<xsl:value-of select="xmml:name"/>_MAX] = value;
-}
-</xsl:if>
-
 </xsl:for-each>
 
-	
 <xsl:for-each select="gpu:xmodel/xmml:messages/gpu:message">
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Dyanamically created <xsl:value-of select="xmml:name"/> message functions */

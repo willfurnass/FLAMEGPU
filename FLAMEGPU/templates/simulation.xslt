@@ -1168,10 +1168,6 @@ template __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> 
 template __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> * get_next_<xsl:value-of select="xmml:name"/>_message&lt;DISCRETE_2D&gt;(xmachine_message_<xsl:value-of select="xmml:name"/>* current, xmachine_message_<xsl:value-of select="xmml:name"/>_list* <xsl:value-of select="xmml:name"/>_messages);
 template __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> * get_next_<xsl:value-of select="xmml:name"/>_message&lt;CONTINUOUS&gt;(xmachine_message_<xsl:value-of select="xmml:name"/>* current, xmachine_message_<xsl:value-of select="xmml:name"/>_list* <xsl:value-of select="xmml:name"/>_messages);
 </xsl:if>
-</xsl:for-each> 
-<xsl:for-each select="gpu:xmodel/xmml:xagents/gpu:xagent"><xsl:if test="xmml:memory/gpu:variable/xmml:arrayLength">
-template __FLAME_GPU_FUNC__ <xsl:value-of select="xmml:memory/gpu:variable/xmml:type"/> get_<xsl:value-of select="xmml:name"/>_agent_array_value(<xsl:value-of select="xmml:memory/gpu:variable/xmml:type"/> *array, unsigned int index);
-template __FLAME_GPU_FUNC__ void set_<xsl:value-of select="xmml:name"/>_agent_array_value(<xsl:value-of select="xmml:memory/gpu:variable/xmml:type"/> *array, unsigned int index, <xsl:value-of select="xmml:memory/gpu:variable/xmml:type"/> value);
-</xsl:if></xsl:for-each>
+</xsl:for-each>
 </xsl:template>
 </xsl:stylesheet>

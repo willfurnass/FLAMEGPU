@@ -100,8 +100,31 @@ enum AGENT_TYPE{
  * Holds all agent variables and is aligned to help with coalesced reads on the GPU
  */
 struct __align__(16) xmachine_memory_<xsl:value-of select="xmml:name"/>
-{<xsl:for-each select="xmml:memory/gpu:variable"><xsl:text>
-    </xsl:text><xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:if test="xmml:arrayLength">*</xsl:if><xsl:value-of select="xmml:name"/>;    /**&lt; X-machine memory variable <xsl:value-of select="xmml:name"/> of type <xsl:value-of select="xmml:type"/>.*/</xsl:for-each>
+{
+    <xsl:for-each select="xmml:memory/gpu:variable">
+    <xsl:choose>
+    <xsl:when test="xmml:arrayLength">struct <xsl:value-of select="xmml:name"/>_array
+    {
+        __host__ __device__ void operator=(<xsl:value-of select="xmml:type"/> *v)
+        {//Assignment of array at construction
+            _array = v;
+        }
+        __host__ __device__ inline <xsl:value-of select="xmml:type"/> &amp;operator[](int x) const
+        {//Array accessor for user, NOTE: Due to strided access, the returned reference shouldn't be converted to a pointer
+            return _array[x*xmachine_memory_<xsl:value-of select="../../xmml:name"/>_MAX];
+        }
+        __host__ __device__ inline unsigned int length() const
+        {
+            return <xsl:value-of select="xmml:arrayLength"/>;
+        }
+    private:
+        <xsl:value-of select="xmml:type"/> *_array = nullptr;
+    }<xsl:value-of select="xmml:name"/>; /**&lt; X-machine memory array <xsl:value-of select="xmml:name"/> of type <xsl:value-of select="xmml:type"/>.*/</xsl:when>
+    <xsl:otherwise>
+    <xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/>; /**&lt; X-machine memory variable <xsl:value-of select="xmml:name"/> of type <xsl:value-of select="xmml:type"/>.*/
+    </xsl:otherwise>
+    </xsl:choose>
+    </xsl:for-each>
 };
 </xsl:for-each>
 

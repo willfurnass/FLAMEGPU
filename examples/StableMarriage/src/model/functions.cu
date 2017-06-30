@@ -15,6 +15,7 @@
  * 
  */
 
+#include <host_defines.h>
 #ifndef _FLAMEGPU_FUNCTIONS
 #define _FLAMEGPU_FUNCTIONS
 
@@ -31,7 +32,7 @@ __FLAME_GPU_FUNC__ int make_proposals(xmachine_memory_Man* agent, xmachine_messa
 	round = agent->round;
 
 	//get next preferable woman
-	woman = get_Man_agent_array_value<int>(agent->preferred_woman, round);
+	woman = agent->preferred_woman[round];
 
 	//make a proposal
     add_proposal_message(proposal_messages, agent->id, woman);
@@ -51,7 +52,7 @@ __FLAME_GPU_FUNC__ int check_proposals(xmachine_memory_Woman* agent, xmachine_me
 		//if proposal is for the woman
 		if (current_message->woman == agent->id){
 			//if proposal desirabiloty is higher than current
-			int rank = get_Woman_agent_array_value<int>(agent->preferred_man, current_message->id);
+			int rank = agent->preferred_man[current_message->id];
 			if ((agent->current_suitor_rank == -1)||(rank < agent->current_suitor_rank)){
 				agent->current_suitor = current_message->id;
 				agent->current_suitor_rank = rank;
