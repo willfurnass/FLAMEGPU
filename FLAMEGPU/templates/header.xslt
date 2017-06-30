@@ -115,13 +115,20 @@ struct __align__(16) xmachine_memory_<xsl:value-of select="xmml:name"/>
         {//Assignment of array at construction
             _array = v;
         }
-        __host__ __device__ inline <xsl:value-of select="xmml:type"/> &amp;operator[](int x) const
-        {//Array accessor for user, NOTE: Due to strided access, the returned reference shouldn't be converted to a pointer
+#if defined(__CUDA_ARCH__)
+        __device__ inline <xsl:value-of select="xmml:type"/> &amp;operator[](int x) const
+        {//Array accessor for device, NOTE: Due to strided access, the returned reference shouldn't be converted to a pointer
             return _array[x*xmachine_memory_<xsl:value-of select="../../xmml:name"/>_MAX];
         }
+#else
+        __host__ inline <xsl:value-of select="xmml:type"/> &amp;operator[](int x) const
+        {
+            return _array[x];
+        }
+#endif
         __host__ __device__ inline unsigned int length() const
         {
-            return <xsl:value-of select="xmml:arrayLength"/>;
+        return <xsl:value-of select="xmml:arrayLength"/>;
         }
     private:
         <xsl:value-of select="xmml:type"/> *_array = nullptr;

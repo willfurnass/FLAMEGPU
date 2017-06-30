@@ -636,8 +636,8 @@ int get_<xsl:value-of select="xmml:name"/>_population_width(){
  */
 void copy_single_xmachine_memory_<xsl:value-of select="xmml:name"/>_hostToDevice(xmachine_memory_<xsl:value-of select="xmml:name"/>_list * d_dst, xmachine_memory_<xsl:value-of select="xmml:name"/> * h_agent){
 <xsl:for-each select="xmml:memory/gpu:variable"><xsl:if test="xmml:arrayLength"> 
-	for(unsigned int i = 0; i &lt; <xsl:value-of select="xmml:arrayLength"/>; i++){
-		gpuErrchk(cudaMemcpy(d_dst-&gt;<xsl:value-of select="xmml:name"/> + (i * xmachine_memory_<xsl:value-of select="../../xmml:name" />_MAX), h_agent-&gt;<xsl:value-of select="xmml:name"/> + i, sizeof(<xsl:value-of select="xmml:type"/>), cudaMemcpyHostToDevice));
+	for(unsigned int i = 0; i &lt; <xsl:value-of select="xmml:arrayLength"/>; i++){//Manually device stride d_dst-&gt;<xsl:value-of select="xmml:name"/> on host
+		gpuErrchk(cudaMemcpy(&amp;d_dst-&gt;<xsl:value-of select="xmml:name"/>[0] + (i * xmachine_memory_<xsl:value-of select="../../xmml:name" />_MAX), &amp;h_agent-&gt;<xsl:value-of select="xmml:name"/>[i], sizeof(<xsl:value-of select="xmml:type"/>), cudaMemcpyHostToDevice));
     }
 </xsl:if><xsl:if test="not(xmml:arrayLength)"> 
 		gpuErrchk(cudaMemcpy(d_dst-&gt;<xsl:value-of select="xmml:name"/>, &amp;h_agent-&gt;<xsl:value-of select="xmml:name"/>, sizeof(<xsl:value-of select="xmml:type"/>), cudaMemcpyHostToDevice));
@@ -677,14 +677,14 @@ xmachine_memory_<xsl:value-of select="$agent_name" />* h_allocate_agent_<xsl:val
 <xsl:for-each select="xmml:memory/gpu:variable">
 <xsl:if test="xmml:arrayLength">
     agent-&gt;<xsl:value-of select="xmml:name"/> = (<xsl:value-of select="xmml:type"/>*)malloc(<xsl:value-of select="xmml:arrayLength"/> * sizeof(<xsl:value-of select="xmml:type"/>));
-    memset(agent-&gt;<xsl:value-of select="xmml:name"/>, 0, sizeof(<xsl:value-of select="xmml:type"/>)*<xsl:value-of select="xmml:arrayLength"/>);
+    memset(&amp;agent-&gt;<xsl:value-of select="xmml:name"/>[0], 0, sizeof(<xsl:value-of select="xmml:type"/>)*<xsl:value-of select="xmml:arrayLength"/>);
 </xsl:if>
 </xsl:for-each>
 	return agent;
 }
 void h_free_agent_<xsl:value-of select="$agent_name" />(xmachine_memory_<xsl:value-of select="$agent_name" />** agent){
 <xsl:variable name="xagentname" select="xmml:xagentName"/><xsl:for-each select="xmml:memory/gpu:variable"><xsl:if test="xmml:arrayLength">
-    free((*agent)-&gt;<xsl:value-of select="xmml:name"/>);
+    free(&amp;(*agent)-&gt;<xsl:value-of select="xmml:name"/>[0]);
 </xsl:if></xsl:for-each> 
 	free((*agent));
 	(*agent) = NULL;
