@@ -102,12 +102,12 @@ void initCUDA(int argc, char** argv){
 	cudaStatus = cudaGetDeviceCount(&amp;device_count);
 
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "Error finding CUDA devices!  Do you have a CUDA-capable GPU installed?");
-		exit(0);
+		fprintf(stderr, "Error finding CUDA devices!  Do you have a CUDA-capable GPU installed?\n");
+		exit(EXIT_FAILURE);
 	}
 	if (device_count == 0){
-		fprintf(stderr, "Error no CUDA devices found!");
-		exit(0);
+		fprintf(stderr, "Error no CUDA devices found!\n");
+		exit(EXIT_FAILURE);
 	}
 
 #ifdef VISUALISATION
@@ -121,15 +121,15 @@ void initCUDA(int argc, char** argv){
 #endif
 
 	if (device >= device_count){
-		fprintf(stderr, "Error selecting CUDA device! Device id '%d' is not found?", device);
-		exit(0);
+		fprintf(stderr, "Error selecting CUDA device! Device id '%d' is not found?\n", device);
+		exit(EXIT_FAILURE);
 	}
 
 	// Select device
 	cudaStatus = cudaSetDevice(device);
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "Error setting CUDA device!");
-		exit(0);
+		fprintf(stderr, "Error setting CUDA device!\n");
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -142,7 +142,7 @@ int main( int argc, char** argv)
 	cudaError_t cudaStatus;
 	//check usage mode
 	if (!checkUsage(argc, argv))
-		exit(0);
+		exit(EXIT_FAILURE);
 
 	//get the directory paths
 	setFilePaths(argv[1]);
@@ -161,7 +161,7 @@ int main( int argc, char** argv)
     
 #ifdef VISUALISATION
 	runVisualisation();
-	exit(0);
+	exit(EXIT_SUCCESS);
 #else	
 	//Benchmark simulation
 	cudaEvent_t start, stop;
@@ -176,7 +176,7 @@ int main( int argc, char** argv)
 	if (iterations == 0)
 	{
 		printf("Second argument must be an integer (Number of Iterations)\n");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
   
 	//start timing
@@ -212,9 +212,10 @@ int main( int argc, char** argv)
 	cleanup();
 	cudaStatus = cudaDeviceReset();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "Error resetting the device!");
-		return 1;
+		fprintf(stderr, "Error resetting the device!\n");
+		return EXIT_FAILURE;
 	}
+	return EXIT_SUCCESS;
 }
 </xsl:template>
 </xsl:stylesheet>

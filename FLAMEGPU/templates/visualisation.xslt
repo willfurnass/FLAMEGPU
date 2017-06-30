@@ -313,7 +313,7 @@ int initGL()
 	glewInit();
 	if (! glewIsSupported( "GL_VERSION_2_0 " 
 		"GL_ARB_pixel_buffer_object")) {
-		fprintf( stderr, "ERROR: Support for necessary OpenGL extensions missing.");
+		fprintf( stderr, "ERROR: Support for necessary OpenGL extensions missing.\n");
 		fflush( stderr);
 		return 1;
 	}
@@ -616,7 +616,7 @@ void keyboard( unsigned char key, int /*x*/, int /*y*/)
 		</xsl:for-each>
 		cudaEventDestroy(start);
     cudaEventDestroy(stop);
-		exit( 0);
+		exit(EXIT_SUCCESS);
 	}
 }
 
