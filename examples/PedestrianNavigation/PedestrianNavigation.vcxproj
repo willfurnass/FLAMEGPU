@@ -141,6 +141,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <GenerateLineInfo>true</GenerateLineInfo>
       <HostDebugInfo>true</HostDebugInfo>
       <Runtime>MTd</Runtime>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Console|x64'">
@@ -204,14 +205,15 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\dynamic\FLAMEGPU_kernals.cu">
+    <CudaCompile Include="src\dynamic\FLAMEGPU_kernals.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Console|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Console|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">true</ExcludedFromBuild>
       <FileType>Document</FileType>
-    </ClInclude>
+    </CudaCompile>
     <ClInclude Include="src\Graph.h" />
+    <ClInclude Include="src\ORCA.h" />
     <ClInclude Include="src\visualisation\BufferObjects.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Console|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_Console|x64'">true</ExcludedFromBuild>
@@ -255,6 +257,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile Include="src\dynamic\simulation.cu">
       <AdditionalDeps Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">
       </AdditionalDeps>
+    </CudaCompile>
+    <CudaCompile Include="src\ORCA.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">false</ExcludedFromBuild>
     </CudaCompile>
     <CudaCompile Include="src\visualisation\BufferObjects.cu">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Console|x64'">true</ExcludedFromBuild>
@@ -337,15 +342,18 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <VisualisationTransform Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">false</VisualisationTransform>
       <HeaderTransform Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">true</HeaderTransform>
       <FLAMEGPUKernalsTransform Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">true</FLAMEGPUKernalsTransform>
-      <IOTransform Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">true</IOTransform>
+      <IOTransform Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">false</IOTransform>
       <SimulationTransform Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">true</SimulationTransform>
       <MainTransform Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">true</MainTransform>
       <SubType>Designer</SubType>
       <HeaderTransform Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">true</HeaderTransform>
       <FLAMEGPUKernalsTransform Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">true</FLAMEGPUKernalsTransform>
-      <IOTransform Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">true</IOTransform>
+      <IOTransform Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">false</IOTransform>
       <SimulationTransform Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">true</SimulationTransform>
       <MainTransform Condition="'$(Configuration)|$(Platform)'=='Release_Visualisation|x64'">true</MainTransform>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Visualisation|x64'">false</ExcludedFromBuild>
+      <IOTransform Condition="'$(Configuration)|$(Platform)'=='Release_Console|x64'">false</IOTransform>
+      <IOTransform Condition="'$(Configuration)|$(Platform)'=='Debug_Console|x64'">false</IOTransform>
     </FLAMEGPU_Template_Build_Rule>
   </ItemGroup>
   <ItemGroup>

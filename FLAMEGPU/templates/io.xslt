@@ -27,6 +27,7 @@
 #include &lt;string.h&gt;
 #include &lt;cmath&gt;
 #include &lt;limits.h&gt;
+#include &lt;algorithm&gt;
 	
 
 // include header
@@ -183,18 +184,26 @@ void readInitialStates(char* inputpath, <xsl:for-each select="gpu:xmodel/xmml:xa
 	//If this is not done then it will cause errors in emu mode where undefined memory is not 0
 	for (int k=0; k&lt;xmachine_memory_<xsl:value-of select="xmml:name"/>_MAX; k++)
 	{	<xsl:for-each select="xmml:memory/gpu:variable"><xsl:choose><xsl:when test="xmml:arrayLength">
-        for (i=0;i&lt;<xsl:value-of select="xmml:arrayLength"/>;i++){
-            h_<xsl:value-of select="../../xmml:name"/>s-><xsl:value-of select="xmml:name"/>[(i*xmachine_memory_<xsl:value-of select="../../xmml:name"/>_MAX)+k] = 0;
-        }</xsl:when><xsl:otherwise>
+        memset(<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>, 0, sizeof(<xsl:value-of select="xmml:type"/>)*<xsl:value-of select="xmml:arrayLength"/>);</xsl:when><xsl:otherwise>
 		h_<xsl:value-of select="../../xmml:name"/>s-><xsl:value-of select="xmml:name"/>[k] = 0;</xsl:otherwise></xsl:choose></xsl:for-each>
 	}
 	</xsl:for-each>
 
 	/* Default variables for memory */<xsl:for-each select="gpu:xmodel/xmml:xagents/gpu:xagent/xmml:memory/gpu:variable"><xsl:choose><xsl:when test="xmml:arrayLength">
-    for (i=0;i&lt;<xsl:value-of select="xmml:arrayLength"/>;i++){
-        <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>[i] = <xsl:choose><xsl:when test="xmml:defaultValue"><xsl:value-of select="xmml:defaultValue"/></xsl:when><xsl:otherwise>0</xsl:otherwise></xsl:choose>;
-    }</xsl:when><xsl:otherwise><xsl:text>
-    </xsl:text><xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/> = <xsl:choose><xsl:when test="xmml:defaultValue"><xsl:value-of select="xmml:defaultValue"/></xsl:when><xsl:otherwise>0</xsl:otherwise></xsl:choose>;</xsl:otherwise></xsl:choose></xsl:for-each>
+        <xsl:choose>
+            <xsl:when test="xmml:defaultValue">
+    std::fill(<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>, <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>+<xsl:value-of select="xmml:arrayLength"/>, <xsl:value-of select="xmml:defaultValue"/>);</xsl:when>
+            <xsl:otherwise>
+    memset(<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>,0,sizeof(<xsl:value-of select="xmml:type"/>)*<xsl:value-of select="xmml:arrayLength"/>);</xsl:otherwise>
+        </xsl:choose>
+    </xsl:when><xsl:otherwise>
+        <xsl:choose>
+            <xsl:when test="xmml:defaultValue">
+    std::fill(&amp;<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>, &amp;<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>+1, <xsl:value-of select="xmml:defaultValue"/>);</xsl:when>
+            <xsl:otherwise>
+    memset(&amp;<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>,0,sizeof(<xsl:value-of select="xmml:type"/>));</xsl:otherwise>
+        </xsl:choose>
+    </xsl:otherwise></xsl:choose></xsl:for-each>
 
 	/* Read file until end of xml */
     i = 0;
@@ -265,9 +274,7 @@ void readInitialStates(char* inputpath, <xsl:for-each select="gpu:xmodel/xmml:xa
 
 				
 				/* Reset xagent variables */<xsl:for-each select="gpu:xmodel/xmml:xagents/gpu:xagent/xmml:memory/gpu:variable"><xsl:choose><xsl:when test="xmml:arrayLength">
-                for (i=0;i&lt;<xsl:value-of select="xmml:arrayLength"/>;i++){
-                    <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>[i] = <xsl:choose><xsl:when test="xmml:defaultValue"><xsl:value-of select="xmml:defaultValue"/></xsl:when><xsl:otherwise>0</xsl:otherwise></xsl:choose>;
-                }</xsl:when><xsl:otherwise><xsl:text>
+                memset(<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>, 0, sizeof(<xsl:value-of select="xmml:type"/>)*<xsl:value-of select="xmml:arrayLength"/>);</xsl:when><xsl:otherwise><xsl:text>
                 </xsl:text><xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/> = <xsl:choose><xsl:when test="xmml:defaultValue"><xsl:value-of select="xmml:defaultValue"/></xsl:when><xsl:otherwise>0</xsl:otherwise></xsl:choose>;</xsl:otherwise></xsl:choose></xsl:for-each>
 
 			}

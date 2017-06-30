@@ -513,37 +513,71 @@ void singleIteration(){
 	gpuErrchk(cudaMemcpyToSymbol( d_message_<xsl:value-of select="xmml:name"/>_count, &amp;h_message_<xsl:value-of select="xmml:name"/>_count, sizeof(int)));
 	</xsl:if></xsl:for-each>
 
-	/* Call agent functions in order iterating through the layer functions */
-	<xsl:for-each select="gpu:xmodel/xmml:layers/xmml:layer">
-	/* Layer <xsl:value-of select="position()"/>*/
-	<xsl:for-each select="gpu:layerFunction">
-#if defined(INSTRUMENT_AGENT_FUNCTIONS) &amp;&amp; INSTRUMENT_AGENT_FUNCTIONS
-	cudaEventRecord(instrument_start);
-#endif
-	<xsl:variable name="function" select="xmml:name"/><xsl:variable name="stream_num" select="position()"/><xsl:for-each select="../../../xmml:xagents/gpu:xagent/xmml:functions/gpu:function[xmml:name=$function]">
-	<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>(stream<xsl:value-of select="$stream_num"/>);
-#if defined(INSTRUMENT_AGENT_FUNCTIONS) &amp;&amp; INSTRUMENT_AGENT_FUNCTIONS
-	cudaEventRecord(instrument_stop);
-	cudaEventSynchronize(instrument_stop);
-	cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
-	printf("Instrumentation: <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/> = %f (ms)\n", instrument_milliseconds);
-#endif
-	</xsl:for-each></xsl:for-each>cudaDeviceSynchronize();
-  </xsl:for-each>
-    
-    /* Call all step functions */
-	<xsl:for-each select="gpu:xmodel/gpu:environment/gpu:stepFunctions/gpu:stepFunction">
-#if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
-	cudaEventRecord(instrument_start);
-#endif
-	<xsl:value-of select="gpu:name"/>();<xsl:text>
-	</xsl:text>
-#if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
-	cudaEventRecord(instrument_stop);
-	cudaEventSynchronize(instrument_stop);
-	cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
-	printf("Instrumentation: <xsl:value-of select="gpu:name"/> = %f (ms)\n", instrument_milliseconds);
-#endif</xsl:for-each>
+    /* Call agent functions in order iterating through the layer functions */
+    <xsl:for-each select="gpu:xmodel/xmml:layers/xmml:layer">
+        /* Layer <xsl:value-of select="position()"/>*/
+        <xsl:for-each select="gpu:layerFunction">
+            <xsl:variable name="function" select="xmml:name"/>
+            <xsl:choose>
+                <!--Test if layer fn is an agent function-->
+                <xsl:when test="../../../xmml:xagents/gpu:xagent/xmml:functions/gpu:function[xmml:name=$function]">
+                    <!--Normal Agent fn handling-->
+                    <xsl:variable name="stream_num" select="position()"/>
+                    <xsl:for-each select="../../../xmml:xagents/gpu:xagent/xmml:functions/gpu:function[xmml:name=$function]">
+        #if defined(INSTRUMENT_AGENT_FUNCTIONS) &amp;&amp; INSTRUMENT_AGENT_FUNCTIONS
+            cudaEventRecord(instrument_start);
+        #endif
+        <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/>(stream<xsl:value-of select="$stream_num"/>);
+        #if defined(INSTRUMENT_AGENT_FUNCTIONS) &amp;&amp; INSTRUMENT_AGENT_FUNCTIONS
+            cudaEventRecord(instrument_stop);
+            cudaEventSynchronize(instrument_stop);
+            cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
+            printf("Instrumentation: <xsl:value-of select="../../xmml:name"/>_<xsl:value-of select="xmml:name"/> = %f (ms)\n", instrument_milliseconds);
+        #endif
+                    </xsl:for-each>
+                </xsl:when>
+                <!--Test if layer fn is an step function-->
+                <xsl:when test="../../../gpu:environment/gpu:stepFunctions/gpu:stepFunction[gpu:name=$function]">
+                    <!--Normal Step fn handling-->
+        #if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
+            cudaEventRecord(instrument_start);
+        #endif
+        <xsl:value-of select="xmml:name"/>();<xsl:text>
+</xsl:text>
+        #if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
+            cudaEventRecord(instrument_stop);
+            cudaEventSynchronize(instrument_stop);
+            cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
+            printf("Instrumentation: <xsl:value-of select="xmml:name"/> = %f (ms)\n", instrument_milliseconds);
+        #endif
+                </xsl:when>
+                <!--Else, give runtime compile error-->
+                <xsl:otherwise>
+        #error Layer function '<xsl:value-of select="xmml:name"/>' was not found.
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:for-each>cudaDeviceSynchronize();
+    </xsl:for-each>
+    <!-- Backwards compatibility handling of step functions-->
+
+    /* Call all remaining step functions */
+    <xsl:for-each select="gpu:xmodel/gpu:environment/gpu:stepFunctions/gpu:stepFunction">
+        <xsl:variable name="function" select="gpu:name"/>
+        <!--Only call step function if it has not already been called during a layer-->
+        <xsl:if test="not(../../../xmml:layers/xmml:layer/gpu:layerFunction[xmml:name=$function])">
+            #if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
+            cudaEventRecord(instrument_start);
+            #endif
+            <xsl:value-of select="gpu:name"/>();<xsl:text>
+        </xsl:text>
+            #if defined(INSTRUMENT_STEP_FUNCTIONS) &amp;&amp; INSTRUMENT_STEP_FUNCTIONS
+            cudaEventRecord(instrument_stop);
+            cudaEventSynchronize(instrument_stop);
+            cudaEventElapsedTime(&amp;instrument_milliseconds, instrument_start, instrument_stop);
+            printf("Instrumentation: <xsl:value-of select="gpu:name"/> = %f (ms)\n", instrument_milliseconds);
+            #endif
+        </xsl:if>
+    </xsl:for-each>
 
 #if defined(OUTPUT_POPULATION_PER_ITERATION) &amp;&amp; OUTPUT_POPULATION_PER_ITERATION
 	// Print the agent population size of all agents in all states
@@ -636,8 +670,8 @@ int get_<xsl:value-of select="xmml:name"/>_population_width(){
  */
 void copy_single_xmachine_memory_<xsl:value-of select="xmml:name"/>_hostToDevice(xmachine_memory_<xsl:value-of select="xmml:name"/>_list * d_dst, xmachine_memory_<xsl:value-of select="xmml:name"/> * h_agent){
 <xsl:for-each select="xmml:memory/gpu:variable"><xsl:if test="xmml:arrayLength"> 
-	for(unsigned int i = 0; i &lt; <xsl:value-of select="xmml:arrayLength"/>; i++){
-		gpuErrchk(cudaMemcpy(d_dst-&gt;<xsl:value-of select="xmml:name"/> + (i * xmachine_memory_<xsl:value-of select="../../xmml:name" />_MAX), h_agent-&gt;<xsl:value-of select="xmml:name"/> + i, sizeof(<xsl:value-of select="xmml:type"/>), cudaMemcpyHostToDevice));
+	for(unsigned int i = 0; i &lt; <xsl:value-of select="xmml:arrayLength"/>; i++){//Manually device stride d_dst-&gt;<xsl:value-of select="xmml:name"/> on host
+		gpuErrchk(cudaMemcpy(&amp;d_dst-&gt;<xsl:value-of select="xmml:name"/>[0] + (i * xmachine_memory_<xsl:value-of select="../../xmml:name" />_MAX), &amp;h_agent-&gt;<xsl:value-of select="xmml:name"/>[i], sizeof(<xsl:value-of select="xmml:type"/>), cudaMemcpyHostToDevice));
     }
 </xsl:if><xsl:if test="not(xmml:arrayLength)"> 
 		gpuErrchk(cudaMemcpy(d_dst-&gt;<xsl:value-of select="xmml:name"/>, &amp;h_agent-&gt;<xsl:value-of select="xmml:name"/>, sizeof(<xsl:value-of select="xmml:type"/>), cudaMemcpyHostToDevice));
@@ -673,22 +707,18 @@ void copy_partial_xmachine_memory_<xsl:value-of select="xmml:name"/>_hostToDevic
 <xsl:for-each select="gpu:xmodel/xmml:xagents/gpu:xagent"><xsl:variable name="agent_name" select="xmml:name"/>
 xmachine_memory_<xsl:value-of select="$agent_name" />* h_allocate_agent_<xsl:value-of select="$agent_name" />(){
 	xmachine_memory_<xsl:value-of select="$agent_name" />* agent = (xmachine_memory_<xsl:value-of select="$agent_name" />*)malloc(sizeof(xmachine_memory_<xsl:value-of select="$agent_name" />));
+    memset(agent, 0, sizeof(xmachine_memory_<xsl:value-of select="$agent_name" />));
 <xsl:for-each select="xmml:memory/gpu:variable">
-<xsl:choose>
-<xsl:when test="not(xmml:arrayLength)">
-    agent-&gt;<xsl:value-of select="xmml:name"/> = 0;</xsl:when>
-<xsl:otherwise>
+<xsl:if test="xmml:arrayLength">
     agent-&gt;<xsl:value-of select="xmml:name"/> = (<xsl:value-of select="xmml:type"/>*)malloc(<xsl:value-of select="xmml:arrayLength"/> * sizeof(<xsl:value-of select="xmml:type"/>));
-    for(unsigned int i = 0; i &lt; <xsl:value-of select="xmml:arrayLength"/>; i++){
-        agent-&gt;<xsl:value-of select="xmml:name"/>[i] = 0;
-    }</xsl:otherwise>
-</xsl:choose>
+    memset(&amp;agent-&gt;<xsl:value-of select="xmml:name"/>[0], 0, sizeof(<xsl:value-of select="xmml:type"/>)*<xsl:value-of select="xmml:arrayLength"/>);
+</xsl:if>
 </xsl:for-each>
 	return agent;
 }
 void h_free_agent_<xsl:value-of select="$agent_name" />(xmachine_memory_<xsl:value-of select="$agent_name" />** agent){
 <xsl:variable name="xagentname" select="xmml:xagentName"/><xsl:for-each select="xmml:memory/gpu:variable"><xsl:if test="xmml:arrayLength">
-    free((*agent)-&gt;<xsl:value-of select="xmml:name"/>);
+    free(&amp;(*agent)-&gt;<xsl:value-of select="xmml:name"/>[0]);
 </xsl:if></xsl:for-each> 
 	free((*agent));
 	(*agent) = NULL;
@@ -1316,5 +1346,24 @@ extern void reset_<xsl:value-of select="../../xmml:name"/>_<xsl:value-of select=
 }
 </xsl:for-each>
     
+/* global constant variables */
+<xsl:for-each select="gpu:xmodel/gpu:environment/gpu:constants/gpu:variable">
+__constant__ <xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="xmml:arrayLength">[<xsl:value-of select="xmml:arrayLength"/>]</xsl:if>;
+</xsl:for-each>
+ 
+/* Forcibly instantiate all templated methods */
+
+template __FLAME_GPU_FUNC__ float rnd&lt;DISCRETE_2D&gt;(RNG_rand48* rand48);
+template __FLAME_GPU_FUNC__ float rnd&lt;CONTINUOUS&gt;(RNG_rand48* rand48);
+<xsl:for-each select="gpu:xmodel/xmml:messages/gpu:message">
+<xsl:if test="gpu:partitioningDiscrete">
+template __FLAME_GPU_FUNC__ void add_<xsl:value-of select="xmml:name"/>_message&lt;DISCRETE_2D&gt;(xmachine_message_<xsl:value-of select="xmml:name"/>_list* <xsl:value-of select="xmml:name"/>_messages, <xsl:for-each select="xmml:variables/gpu:variable"><xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="position()!=last()">, </xsl:if></xsl:for-each>);
+template __FLAME_GPU_FUNC__ void add_<xsl:value-of select="xmml:name"/>_message&lt;CONTINUOUS&gt;(xmachine_message_<xsl:value-of select="xmml:name"/>_list* <xsl:value-of select="xmml:name"/>_messages, <xsl:for-each select="xmml:variables/gpu:variable"><xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="position()!=last()">, </xsl:if></xsl:for-each>);
+template __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> * get_first_<xsl:value-of select="xmml:name"/>_message&lt;DISCRETE_2D&gt;(xmachine_message_<xsl:value-of select="xmml:name"/>_list* <xsl:value-of select="xmml:name"/>_messages, int agentx, int agent_y);
+template __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> * get_first_<xsl:value-of select="xmml:name"/>_message&lt;CONTINUOUS&gt;(xmachine_message_<xsl:value-of select="xmml:name"/>_list* <xsl:value-of select="xmml:name"/>_messages, int agentx, int agent_y);
+template __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> * get_next_<xsl:value-of select="xmml:name"/>_message&lt;DISCRETE_2D&gt;(xmachine_message_<xsl:value-of select="xmml:name"/>* current, xmachine_message_<xsl:value-of select="xmml:name"/>_list* <xsl:value-of select="xmml:name"/>_messages);
+template __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> * get_next_<xsl:value-of select="xmml:name"/>_message&lt;CONTINUOUS&gt;(xmachine_message_<xsl:value-of select="xmml:name"/>* current, xmachine_message_<xsl:value-of select="xmml:name"/>_list* <xsl:value-of select="xmml:name"/>_messages);
+</xsl:if>
+</xsl:for-each>
 </xsl:template>
 </xsl:stylesheet>

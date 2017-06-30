@@ -106,8 +106,38 @@ enum AGENT_TYPE{
  * Holds all agent variables and is aligned to help with coalesced reads on the GPU
  */
 struct __align__(16) xmachine_memory_<xsl:value-of select="xmml:name"/>
-{<xsl:for-each select="xmml:memory/gpu:variable"><xsl:text>
-    </xsl:text><xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:if test="xmml:arrayLength">*</xsl:if><xsl:value-of select="xmml:name"/>;    /**&lt; X-machine memory variable <xsl:value-of select="xmml:name"/> of type <xsl:value-of select="xmml:type"/>.*/</xsl:for-each>
+{
+    <xsl:for-each select="xmml:memory/gpu:variable">
+    <xsl:choose>
+    <xsl:when test="xmml:arrayLength">struct <xsl:value-of select="xmml:name"/>_array
+    {
+        __host__ __device__ void operator=(<xsl:value-of select="xmml:type"/> *v)
+        {//Assignment of array at construction
+            _array = v;
+        }
+#if defined(__CUDA_ARCH__)
+        __device__ inline <xsl:value-of select="xmml:type"/> &amp;operator[](int x) const
+        {//Array accessor for device, NOTE: Due to strided access, the returned reference shouldn't be converted to a pointer
+            return _array[x*xmachine_memory_<xsl:value-of select="../../xmml:name"/>_MAX];
+        }
+#else
+        __host__ inline <xsl:value-of select="xmml:type"/> &amp;operator[](int x) const
+        {
+            return _array[x];
+        }
+#endif
+        __host__ __device__ inline unsigned int length() const
+        {
+        return <xsl:value-of select="xmml:arrayLength"/>;
+        }
+    private:
+        <xsl:value-of select="xmml:type"/> *_array = nullptr;
+    }<xsl:value-of select="xmml:name"/>; /**&lt; X-machine memory array <xsl:value-of select="xmml:name"/> of type <xsl:value-of select="xmml:type"/>.*/</xsl:when>
+    <xsl:otherwise>
+    <xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/>; /**&lt; X-machine memory variable <xsl:value-of select="xmml:name"/> of type <xsl:value-of select="xmml:type"/>.*/
+    </xsl:otherwise>
+    </xsl:choose>
+    </xsl:for-each>
 };
 </xsl:for-each>
 
@@ -308,29 +338,6 @@ __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> * get_nex
  </xsl:text></xsl:if></xsl:for-each>*/
 __FLAME_GPU_FUNC__ void add_<xsl:value-of select="xmml:name"/>_agent(xmachine_memory_<xsl:value-of select="xmml:name"/>_list* agents, <xsl:for-each select="xmml:memory/gpu:variable[not(xmml:arrayLength)]"><xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="position()!=last()">, </xsl:if></xsl:for-each>);
 </xsl:if>
-
-<xsl:if test="xmml:memory/gpu:variable/xmml:arrayLength">
-/** get_<xsl:value-of select="xmml:name"/>_agent_array_value
- *  Template function for accessing <xsl:value-of select="xmml:name"/> agent array memory variables.
- *  @param array Agent memory array
- *  @param index to lookup
- *  @return return value
- */
-template&lt;typename T&gt;
-__FLAME_GPU_FUNC__ T get_<xsl:value-of select="xmml:name"/>_agent_array_value(T *array, unsigned int index);
-
-/** set_<xsl:value-of select="xmml:name"/>_agent_array_value
- *  Template function for setting <xsl:value-of select="xmml:name"/> agent array memory variables.
- *  @param array Agent memory array
- *  @param index to lookup
- *  @param return value
- */
-template&lt;typename T&gt;
-__FLAME_GPU_FUNC__ void set_<xsl:value-of select="xmml:name"/>_agent_array_value(T *array, unsigned int index, T value);
-
-
-  
-</xsl:if>
     
 </xsl:for-each>
 
@@ -510,7 +517,7 @@ typedef enum {
   
 /* global constant variables */
 <xsl:for-each select="gpu:xmodel/gpu:environment/gpu:constants/gpu:variable">
-__constant__ <xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="xmml:arrayLength">[<xsl:value-of select="xmml:arrayLength"/>]</xsl:if>;
+extern __constant__ <xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="xmml:arrayLength">[<xsl:value-of select="xmml:arrayLength"/>]</xsl:if>;
 </xsl:for-each>
     
 <xsl:for-each select="gpu:xmodel/gpu:environment/gpu:constants/gpu:variable">

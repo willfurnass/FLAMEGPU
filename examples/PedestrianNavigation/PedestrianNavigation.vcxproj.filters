@@ -19,13 +19,14 @@
     <CudaCompile Include="src\visualisation\PedestrianPopulation.cu">
       <Filter>visualisation</Filter>
     </CudaCompile>
+    <CudaCompile Include="src\ORCA.cu" />
+    <CudaCompile Include="src\dynamic\FLAMEGPU_kernals.cu">
+      <Filter>dynamic</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="XMML.h" />
     <ClInclude Include="XMMLGPU.h" />
-    <ClInclude Include="src\dynamic\FLAMEGPU_kernals.cu">
-      <Filter>dynamic</Filter>
-    </ClInclude>
     <ClInclude Include="src\dynamic\header.h">
       <Filter>dynamic</Filter>
     </ClInclude>
@@ -54,6 +55,7 @@
       <Filter>visualisation</Filter>
     </ClInclude>
     <ClInclude Include="src\Graph.h" />
+    <ClInclude Include="src\ORCA.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\FLAMEGPU\templates\FLAMEGPU_kernals.xslt">

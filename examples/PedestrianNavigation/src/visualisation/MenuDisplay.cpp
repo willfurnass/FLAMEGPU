@@ -39,8 +39,8 @@ int drawMenuDisplayState = 0;
 int text_position = 0;
 
 //external FLAME GPU functions from header.h
-extern int get_agent_agent_MAX_count();
-extern int get_agent_agent_default_count();
+extern int get_agent_pedestrian_MAX_count();
+extern int get_agent_pedestrian_default_count();
 
 
 //private prototypes
@@ -420,10 +420,10 @@ void drawInfoDisplay(int width, int height)
 		sprintf(output_buffer,"Current Frames Per Second: %f", getFPS());
 		printInfoLine(output_buffer);
 
-		sprintf(output_buffer,"Current Pedestrian Agent Count: %i", get_agent_agent_default_count());
+        sprintf(output_buffer, "Current Pedestrian Agent Count: %i", get_agent_pedestrian_default_count());
 		printInfoLine(output_buffer);
 
-		sprintf(output_buffer,"Maximum Pedestrian Agent Count: %i", get_agent_agent_MAX_count());
+        sprintf(output_buffer, "Maximum Pedestrian Agent Count: %i", get_agent_pedestrian_MAX_count());
 		printInfoLine(output_buffer);
 
 		sprintf(output_buffer,"Emmission Rate: %f", getEmmisionRateExit1());

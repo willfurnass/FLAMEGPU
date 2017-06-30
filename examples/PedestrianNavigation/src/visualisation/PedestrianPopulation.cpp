@@ -67,7 +67,7 @@ GLuint pvs_normal_l;
 GLuint pvs_normal_r;
 
 //external prototypes imported from FLAME GPU
-extern int get_agent_agent_MAX_count();
+extern int get_agent_pedestrian_MAX_count();
 
 //PRIVATE PROTOTYPES
 /** initPedestrianShader
@@ -164,8 +164,8 @@ void renderPedestrianPopulation()
 void createPedestrianBufferObjects()
 {
 	//create TBO
-	createTBO(&p_instances_data1_tbo, &p_instances_data1_tex, get_agent_agent_MAX_count()* sizeof(glm::vec4));
-	createTBO(&p_instances_data2_tbo, &p_instances_data2_tex, get_agent_agent_MAX_count()* sizeof(glm::vec4));
+    createTBO(&p_instances_data1_tbo, &p_instances_data1_tex, get_agent_pedestrian_MAX_count()* sizeof(glm::vec4));
+    createTBO(&p_instances_data2_tbo, &p_instances_data2_tex, get_agent_pedestrian_MAX_count()* sizeof(glm::vec4));
 	registerBO(&p_instances_data1_tbo);
 	registerBO(&p_instances_data2_tbo);
 

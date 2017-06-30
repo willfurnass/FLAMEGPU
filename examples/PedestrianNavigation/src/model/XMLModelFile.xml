@@ -122,6 +122,9 @@
             <gpu:initFunction>
                 <gpu:name>loadGraph</gpu:name>
             </gpu:initFunction>
+            <!--<gpu:initFunction>
+                <gpu:name>initORCA</gpu:name>
+            </gpu:initFunction>-->
         </gpu:initFunctions>
         <gpu:exitFunctions>
             <gpu:exitFunction>
@@ -132,12 +135,16 @@
             <gpu:stepFunction>
                 <gpu:name>spawnAgents</gpu:name>
             </gpu:stepFunction>
+            <gpu:stepFunction>
+                <gpu:name>stepORCA</gpu:name>
+            </gpu:stepFunction>
         </gpu:stepFunctions>
     </gpu:environment>
     <xagents>
         <gpu:xagent>
-            <name>agent</name>
+            <name>pedestrian</name>
             <memory>
+                <!--location-->
                 <gpu:variable>
                     <type>float</type>
                     <name>x</name>
@@ -150,26 +157,44 @@
                     <type>float</type>
                     <name>z</name>
                 </gpu:variable>
+                <!--2D Velocity-->
                 <gpu:variable>
                     <type>float</type>
-                    <name>velx</name>
+                    <name>vx</name>
                 </gpu:variable>
                 <gpu:variable>
                     <type>float</type>
-                    <name>vely</name>
+                    <name>vy</name>
+                </gpu:variable>
+                <!--2D Navigation Velocity (Desired velocity from navigation routine)-->
+                <gpu:variable>
+                    <type>float</type>
+                    <name>desvx</name>
                 </gpu:variable>
                 <gpu:variable>
                     <type>float</type>
-                    <name>steer_x</name>
+                    <name>desvy</name>
+                </gpu:variable>
+                <!--ORCA Specific-->
+                <gpu:variable>
+                    <type>int</type>
+                    <name>count</name>
                 </gpu:variable>
                 <gpu:variable>
-                    <type>float</type>
-                    <name>steer_y</name>
+                    <type>int</type>
+                    <name>lineFail</name>
                 </gpu:variable>
                 <gpu:variable>
-                    <type>float</type>
-                    <name>height</name>
+                    <type>glm::vec4</type>
+                    <name>orcaLine</name>
+                    <arrayLength>128</arrayLength>
                 </gpu:variable>
+                <gpu:variable>
+                    <type>glm::vec4</type>
+                    <name>projLine</name>
+                    <arrayLength>128</arrayLength>
+                </gpu:variable>
+                <!--Navigation-->
                 <gpu:variable>
                     <type>unsigned int</type>
                     <name>current_edge</name>
@@ -178,14 +203,15 @@
                     <type>unsigned int</type>
                     <name>next_edge</name>
                 </gpu:variable>
-              <gpu:variable>
-                <type>int</type>
-                <name>exit_no</name>
-              </gpu:variable>
-              <gpu:variable>
-                <type>float</type>
-                <name>speed</name>
-              </gpu:variable>
+                <gpu:variable>
+                    <type>int</type>
+                    <name>exit_no</name>
+                </gpu:variable>
+                <!--Misc-->
+                <gpu:variable>
+                    <type>float</type>
+                    <name>speed</name>
+                </gpu:variable>
                 <!-- rendering and animation variables-->
                 <gpu:variable>
                     <type>int</type>
@@ -216,7 +242,7 @@
                     <gpu:RNG>false</gpu:RNG>
                 </gpu:function>
 
-                <gpu:function>
+                <!--<gpu:function>
                     <name>avoid_pedestrians</name>
                     <currentState>default</currentState>
                     <nextState>default</nextState>
@@ -227,7 +253,7 @@
                     </inputs>
                     <gpu:reallocate>false</gpu:reallocate>
                     <gpu:RNG>true</gpu:RNG>
-                </gpu:function>
+                </gpu:function>-->
 
                 <gpu:function>
                     <name>force_flow</name>
@@ -274,6 +300,14 @@
                     <type>float</type>
                     <name>z</name>
                 </gpu:variable>
+                <gpu:variable>
+                    <type>float</type>
+                    <name>vx</name>
+                </gpu:variable>
+                <gpu:variable>
+                    <type>float</type>
+                    <name>vy</name>
+                </gpu:variable>
             </variables>
             <gpu:partitioningSpatial>
                 <gpu:radius>0.025</gpu:radius>
@@ -294,15 +328,13 @@
         <gpu:layerFunction>
             <name>output_pedestrian_location</name>
         </gpu:layerFunction>
-    </layer>
-    <layer>
         <gpu:layerFunction>
-            <name>avoid_pedestrians</name>
+            <name>force_flow</name>
         </gpu:layerFunction>
     </layer>
     <layer>
         <gpu:layerFunction>
-            <name>force_flow</name>
+            <name>stepORCA</name>
         </gpu:layerFunction>
     </layer>
     <layer>

@@ -50,7 +50,7 @@ inline void gpuLaunchAssert(const char *file, int line, bool abort=true)
  * @param	data1 four component vector used to output instance data 
  * @param	data2 four component vector used to output instance data 
  */
-__global__ void output_pedestrians_to_TBO(xmachine_memory_agent_list* agents, glm::vec4* data1, glm::vec4* data2){
+__global__ void output_pedestrians_to_TBO(xmachine_memory_pedestrian_list* agents, glm::vec4* data1, glm::vec4* data2){
 
 	//global thread index
 	int index = __mul24(blockIdx.x,blockDim.x) + threadIdx.x;
@@ -60,10 +60,10 @@ __global__ void output_pedestrians_to_TBO(xmachine_memory_agent_list* agents, gl
 	data1[index].z = agents->y[index];
     data1[index].w = agents->animate[index];
 
-	data2[index].x = agents->velx[index];
-	data2[index].y = agents->vely[index];
+	data2[index].x = agents->vx[index];
+	data2[index].y = agents->vy[index];
 	data2[index].z = (float)agents->exit_no[index];
-    data2[index].w = agents->height[index];
+    data2[index].w = 0;// agents->height[index];
 }
 
 
@@ -79,17 +79,17 @@ void generate_pedestrian_instances(GLuint* instances_data1_tbo, GLuint* instance
 	glm::vec4 *dptr_1;
 	glm::vec4 *dptr_2;
 	
-	if (get_agent_agent_default_count() > 0)
+    if (get_agent_pedestrian_default_count() > 0)
 	{
 		// map OpenGL buffer object for writing from CUDA
 		gpuErrchk(cudaGLMapBufferObject( (void**)&dptr_1, *instances_data1_tbo));
 		gpuErrchk(cudaGLMapBufferObject( (void**)&dptr_2, *instances_data2_tbo));
 		//cuda block size
-		tile_size = (int) ceil((float)get_agent_agent_default_count()/threads_per_tile);
+        tile_size = (int)ceil((float)get_agent_pedestrian_default_count() / threads_per_tile);
 		grid = dim3(tile_size, 1, 1);
 		threads = dim3(threads_per_tile, 1, 1);
 		//kernel
-		output_pedestrians_to_TBO<<< grid, threads>>>(get_device_agent_default_agents(), dptr_1, dptr_2);
+		output_pedestrians_to_TBO<<< grid, threads>>>(get_device_pedestrian_default_agents(), dptr_1, dptr_2);
 		gpuErrchkLaunch();
 		// unmap buffer object
 		gpuErrchk(cudaGLUnmapBufferObject(*instances_data1_tbo));
@@ -100,5 +100,5 @@ void generate_pedestrian_instances(GLuint* instances_data1_tbo, GLuint* instance
 
 int getPedestrianCount()
 {
-	return get_agent_agent_default_count();
+	return get_agent_pedestrian_default_count();
 }

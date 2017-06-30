@@ -70,6 +70,7 @@ std::uniform_real_distribution<float> floatDist(0,1);
 extern void rescalePedestrianPop(float newHeight);//PedestrianPopulation.cpp
 extern void rescaleNavMapPopulation(float scaleFactor, glm::vec3 offset);//NavMapPopulation.cpp
 std::string navPath;
+void stepORCA();
 void setNavPath(const char *_navPath)
 {
     navPath = _navPath;
@@ -212,10 +213,10 @@ __FLAME_GPU_EXIT_FUNC__ void freeGraph()
     CUDA_CALL(cudaFree(ptr));
     h_nav.free();
 }
-extern int h_xmachine_memory_agent_count;
+extern int h_xmachine_memory_pedestrian_count;
 __FLAME_GPU_STEP_FUNC__ void spawnAgents()
 {
-    if (h_xmachine_memory_agent_count >= 5000)
+    if (h_xmachine_memory_pedestrian_count >= 5000)
         return;
     int exitState[7] = { getStateExit1(), getStateExit2(), getStateExit3(), getStateExit4(), getStateExit5(), getStateExit6(), getStateExit7() };
     float emissionRate[7] = { getEmmisionRateExit1(), getEmmisionRateExit2(), getEmmisionRateExit3(), getEmmisionRateExit4(), getEmmisionRateExit5(), getEmmisionRateExit6(), getEmmisionRateExit7() };
@@ -249,24 +250,26 @@ __FLAME_GPU_STEP_FUNC__ void spawnAgents()
             //Calc agent location
             glm::vec3 loc = glm::mix(h_nav.vertex.loc1[i], h_nav.vertex.loc2[i], 0.5);
             //Create agent
-            xmachine_memory_agent agent;
+            xmachine_memory_pedestrian agent;
             agent.animate = floatDist(rng);
             agent.speed = floatDist(rng)*0.5f + 1.0f;
             agent.animate_dir = 1.0f;
             agent.current_edge = h_nav.vertex.routes[exit][i];
             agent.next_edge = h_nav.vertex.routes[exit][h_nav.edge.destination[agent.current_edge]];
             agent.exit_no = exit;
-            agent.height = qt++;//?
+            agent.count = 0;
+            //agent.orcaLine = glm::vec4(0);//Agent array, not var
+            //agent.projLine = glm::vec4(0);//Agent array, not var
             agent.lod = 1.0f;
             agent.x = loc.x;
             agent.y = loc.y;
             agent.z = loc.z;
-            agent.steer_x = 0.0f;
-            agent.steer_y = 0.0f;
-            agent.velx = 0.0f;
-            agent.vely = 0.0f;
+            agent.desvx = 0.0f;
+            agent.desvy = 0.0f;
+            agent.vx = 0.0f;
+            agent.vy = 0.0f;
             //printf("Agent(Entry: %d, Exit: %d, Loc(%.3f, %.3f, %.3f), curr: %d, next: %d\n", i, exit, loc.x, loc.y, loc.z, agent.current_edge, agent.next_edge);
-            h_add_agent_agent_default(&agent);
+            h_add_agent_pedestrian_default(&agent);
         }
     }
 }
@@ -334,10 +337,10 @@ __FLAME_GPU_FUNC__ bool exitIsOpen(int exitId)
  * @param agent Pointer to an agent structre of type xmachine_memory_agent. This represents a single agent instance and can be modified directly.
  * @param pedestrian_location_messages Pointer to output message list of type xmachine_message_location_list. Must be passed as an argument to the add_location_message function ??.
  */
-__FLAME_GPU_FUNC__ int output_pedestrian_location(xmachine_memory_agent* agent, xmachine_message_pedestrian_location_list* pedestrian_location_messages){
+__FLAME_GPU_FUNC__ int output_pedestrian_location(xmachine_memory_pedestrian* agent, xmachine_message_pedestrian_location_list* pedestrian_location_messages){
 
     
-    add_pedestrian_location_message(pedestrian_location_messages, agent->x, agent->y, agent->z);
+    add_pedestrian_location_message(pedestrian_location_messages, agent->x, agent->y, agent->z, agent->vx, agent->vy);
   
     return 0;
 }
@@ -348,10 +351,10 @@ __FLAME_GPU_FUNC__ int output_pedestrian_location(xmachine_memory_agent* agent, 
  * @param agent Pointer to an agent structre of type xmachine_memory_agent. This represents a single agent instance and can be modified directly.
  * @param pedestrian_location_messages Pointer to input message list of type xmachine_message__list. Must be passed as an argument to the get_first_location_message and get_next_location_message functions.* @param partition_matrix Pointer to the partition matrix of type xmachine_message_location_PBM. Used within the get_first__message and get_next__message functions for spatially partitioned message access.* @param rand48 Pointer to the seed list of type RNG_rand48. Must be passed as an arument to the rand48 function for genertaing random numbers on the GPU.
  */
-__FLAME_GPU_FUNC__ int avoid_pedestrians(xmachine_memory_agent* agent, xmachine_message_pedestrian_location_list* pedestrian_location_messages, xmachine_message_pedestrian_location_PBM* partition_matrix, RNG_rand48* rand48){
+/*__FLAME_GPU_FUNC__ int avoid_pedestrians(xmachine_memory_pedestrian* agent, xmachine_message_pedestrian_location_list* pedestrian_location_messages, xmachine_message_pedestrian_location_PBM* partition_matrix, RNG_rand48* rand48){
 
 	glm::vec2 agent_pos = glm::vec2(agent->x, agent->z);
-	glm::vec2 agent_vel = glm::vec2(agent->velx, agent->vely);
+	glm::vec2 agent_vel = glm::vec2(agent->vx, agent->vy);
 
 	glm::vec2 navigate_velocity = glm::vec2(0.0f, 0.0f);
 	glm::vec2 avoid_velocity = glm::vec2(0.0f, 0.0f);
@@ -386,11 +389,11 @@ __FLAME_GPU_FUNC__ int avoid_pedestrians(xmachine_memory_agent* agent, xmachine_
 	//maximum velocity rule
 	glm::vec2 steer_velocity = navigate_velocity + avoid_velocity;
 
-	agent->steer_x = steer_velocity.x;
-	agent->steer_y = steer_velocity.y;
+	agent->desvx = steer_velocity.x;
+	agent->desvy = steer_velocity.y;
 
     return 0;
-}
+}*/
 
 __device__ bool isCW(const glm::vec2* p0, const glm::vec2* p1, const glm::vec2* p2)
 {
@@ -473,7 +476,7 @@ __device__ glm::vec3 closestPointonLineSegment(const glm::vec3 &line1, const glm
 * Automatically generated using functions.xslt
 * @param agent Pointer to an agent structre of type xmachine_memory_agent. This represents a single agent instance and can be modified directly.
 */
-__FLAME_GPU_FUNC__ int force_flow(xmachine_memory_agent* agent, RNG_rand48* rand48)
+__FLAME_GPU_FUNC__ int force_flow(xmachine_memory_pedestrian* agent, RNG_rand48* rand48)
 {
     assert(agent->current_edge < d_nav.edge.count);
     unsigned int currentPoly = d_nav.edge.poly[agent->current_edge];
@@ -491,15 +494,15 @@ __FLAME_GPU_FUNC__ int force_flow(xmachine_memory_agent* agent, RNG_rand48* rand
     //assert(agent->y <= -0.99);
     assert(agent->z <= -0.454);
     //If agent is within the current edge poly
-    glm::vec2 collision_force = glm::vec2(0);
+    //glm::vec2 collision_force = glm::vec2(0);
     //Calculate collision force
     if(!insideConvexPoly3D2D(pointBegin, pointEnd, &agentLoc))
     {        
         //Apply collision force
         //Currently we just take midpoint between the two edges being navigated
-        unsigned int srcVert = d_nav.edge.source[agent->current_edge];
-        glm::vec3 centerLoc = glm::mix(glm::mix(d_nav.vertex.loc1[srcVert], d_nav.vertex.loc2[srcVert], 0.5), dest, 0.01);
-        collision_force = glm::normalize(glm::vec2(centerLoc.x - agent->x, centerLoc.z - agent->z));
+        //unsigned int srcVert = d_nav.edge.source[agent->current_edge];
+        //glm::vec3 centerLoc = glm::mix(glm::mix(d_nav.vertex.loc1[srcVert], d_nav.vertex.loc2[srcVert], 0.5), dest, 0.01);
+        //collision_force = glm::normalize(glm::vec2(centerLoc.x - agent->x, centerLoc.z - agent->z));
     }
     else
     {
@@ -532,11 +535,13 @@ __FLAME_GPU_FUNC__ int force_flow(xmachine_memory_agent* agent, RNG_rand48* rand
     //Calculate goal force
     glm::vec2 goal_force = glm::normalize(glm::vec2(dest.x - agent->x, dest.z - agent->z));
 
-    collision_force *= COLLISION_WEIGHT;
+    //collision_force *= COLLISION_WEIGHT;
 	goal_force *= GOAL_WEIGHT;
 
-	agent->steer_x += collision_force.x + goal_force.x;
-	agent->steer_y += collision_force.y + goal_force.y;
+    agent->desvx += goal_force.x;
+    agent->desvy += goal_force.y;
+    //agent->desvx += collision_force.x + goal_force.x;
+    //agent->desvy += collision_force.y + goal_force.y;
 
     return 0;
 }
@@ -546,11 +551,11 @@ __FLAME_GPU_FUNC__ int force_flow(xmachine_memory_agent* agent, RNG_rand48* rand
  * Automatically generated using functions.xslt
  * @param agent Pointer to an agent structre of type xmachine_memory_agent. This represents a single agent instance and can be modified directly. 
  */
-__FLAME_GPU_FUNC__ int move(xmachine_memory_agent* agent){
+__FLAME_GPU_FUNC__ int move(xmachine_memory_pedestrian* agent){
 
 	glm::vec2 agent_pos = glm::vec2(agent->x, agent->z);
-	glm::vec2 agent_vel = glm::vec2(agent->velx, agent->vely);
-	glm::vec2 agent_steer = glm::vec2(agent->steer_x, agent->steer_y);
+	glm::vec2 agent_vel = glm::vec2(agent->vx, agent->vy);
+	glm::vec2 agent_steer = glm::vec2(agent->desvx, agent->desvy);
 
 	float current_speed = length(agent_vel)+0.025f;//(powf(length(agent_vel), 1.75f)*0.01f)+0.025f;
 
@@ -580,8 +585,8 @@ __FLAME_GPU_FUNC__ int move(xmachine_memory_agent* agent){
 	//update
 	agent->x = agent_pos.x;
 	agent->z = agent_pos.y;
-	agent->velx = agent_vel.x;
-	agent->vely = agent_vel.y;
+	agent->vx = agent_vel.x;
+	agent->vy = agent_vel.y;
 
 
 	//bound by wrapping
