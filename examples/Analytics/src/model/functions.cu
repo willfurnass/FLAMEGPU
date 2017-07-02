@@ -18,6 +18,7 @@
 #define _FUNCTIONS_H_
 
 #include "header.h"
+#include <cstdio>
 
 #define radius 2.0f
 

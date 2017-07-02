@@ -13,6 +13,9 @@
     <CudaCompile Include="src\dynamic\visualisation.cu">
       <Filter>dynamic</Filter>
     </CudaCompile>
+    <CudaCompile Include="src\model\functions.cu">
+      <Filter>model</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="XMML.h" />
@@ -63,11 +66,6 @@
     <Filter Include="visualisation">
       <UniqueIdentifier>{19aa7ca1-80be-4c38-97ec-b46c207b3984}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\model\functions.c">
-      <Filter>model</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\dynamic\_README.txt">
