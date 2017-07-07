@@ -338,29 +338,6 @@ __FLAME_GPU_FUNC__ xmachine_message_<xsl:value-of select="xmml:name"/> * get_nex
  </xsl:text></xsl:if></xsl:for-each>*/
 __FLAME_GPU_FUNC__ void add_<xsl:value-of select="xmml:name"/>_agent(xmachine_memory_<xsl:value-of select="xmml:name"/>_list* agents, <xsl:for-each select="xmml:memory/gpu:variable[not(xmml:arrayLength)]"><xsl:value-of select="xmml:type"/><xsl:text> </xsl:text><xsl:value-of select="xmml:name"/><xsl:if test="position()!=last()">, </xsl:if></xsl:for-each>);
 </xsl:if>
-
-<xsl:if test="xmml:memory/gpu:variable/xmml:arrayLength">
-/** get_<xsl:value-of select="xmml:name"/>_agent_array_value
- *  Template function for accessing <xsl:value-of select="xmml:name"/> agent array memory variables.
- *  @param array Agent memory array
- *  @param index to lookup
- *  @return return value
- */
-template&lt;typename T&gt;
-__FLAME_GPU_FUNC__ T get_<xsl:value-of select="xmml:name"/>_agent_array_value(T *array, unsigned int index);
-
-/** set_<xsl:value-of select="xmml:name"/>_agent_array_value
- *  Template function for setting <xsl:value-of select="xmml:name"/> agent array memory variables.
- *  @param array Agent memory array
- *  @param index to lookup
- *  @param return value
- */
-template&lt;typename T&gt;
-__FLAME_GPU_FUNC__ void set_<xsl:value-of select="xmml:name"/>_agent_array_value(T *array, unsigned int index, T value);
-
-
-  
-</xsl:if>
     
 </xsl:for-each>
 
