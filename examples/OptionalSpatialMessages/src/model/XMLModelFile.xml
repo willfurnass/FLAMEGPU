@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gpu:xmodel xmlns:gpu="http://www.dcs.shef.ac.uk/~paul/XMMLGPU" xmlns="http://www.dcs.shef.ac.uk/~paul/XMML">
+  
+  <name>OptionalSpatialMessages</name>
+
+  <gpu:environment> 
+    <gpu:functionFiles>
+      <file>functions.c</file>
+    </gpu:functionFiles>
+  </gpu:environment>
+
+  <xagents>
+    <gpu:xagent>
+      <name>example_agent</name>
+      <memory>
+        <gpu:variable>
+          <type>int</type>
+          <name>id</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>x</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>y</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>z</name>
+        </gpu:variable>
+      </memory>
+      <functions>
+        <gpu:function>
+          <name>output_example</name>
+          <currentState>default</currentState>
+          <nextState>default</nextState>
+          <outputs>
+            <gpu:output>
+              <messageName>example_message</messageName>
+              <gpu:type>optional_message</gpu:type>
+            </gpu:output>
+          </outputs>
+           <condition>
+            <lhs>
+              <agentVariable>id</agentVariable>
+            </lhs>
+            <operator>==</operator>
+            <rhs>
+              <value>0</value>
+            </rhs>
+          </condition>
+          <gpu:reallocate>false</gpu:reallocate>
+          <gpu:RNG>false</gpu:RNG>
+        </gpu:function>
+        <gpu:function>
+          <name>input_example</name>
+          <currentState>default</currentState>
+          <nextState>default</nextState>
+          <inputs>
+            <gpu:input>
+              <messageName>example_message</messageName>
+            </gpu:input>
+          </inputs>
+          <gpu:reallocate>false</gpu:reallocate>
+          <gpu:RNG>false</gpu:RNG>
+        </gpu:function>
+      </functions>
+      <states>
+        <gpu:state>
+          <name>default</name>
+        </gpu:state>
+        <initialState>default</initialState>
+      </states>
+      <gpu:type>continuous</gpu:type>
+      <gpu:bufferSize>1024</gpu:bufferSize>
+    </gpu:xagent>
+  </xagents>
+  
+  <messages>
+    <gpu:message>
+      <name>example_message</name>
+      <variables>
+        <gpu:variable>
+          <type>int</type>
+          <name>id</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>x</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>y</name>
+        </gpu:variable>
+        <gpu:variable>
+          <type>float</type>
+          <name>z</name>
+        </gpu:variable>
+      </variables>
+
+      <!-- <gpu:partitioningNone></gpu:partitioningNone> -->
+
+      <gpu:partitioningSpatial>
+        <gpu:radius>1.0</gpu:radius>
+        <gpu:xmin>-3.0</gpu:xmin>
+        <gpu:xmax>3.0</gpu:xmax>
+        <gpu:ymin>-1.0</gpu:ymin>
+        <gpu:ymax>1.0</gpu:ymax>
+        <gpu:zmin>-3.0</gpu:zmin>
+        <gpu:zmax>3.0</gpu:zmax>
+      </gpu:partitioningSpatial>
+
+      <gpu:bufferSize>1024</gpu:bufferSize>
+    </gpu:message>
+  </messages>
+  
+  <layers>
+    <layer>
+      <gpu:layerFunction><name>output_example</name></gpu:layerFunction>
+    </layer>
+    <layer>
+      <gpu:layerFunction><name>input_example</name></gpu:layerFunction>
+    </layer>
+  </layers>
+
+</gpu:xmodel>
