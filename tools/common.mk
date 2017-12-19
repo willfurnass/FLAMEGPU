@@ -1,5 +1,5 @@
 ################################################################################
-# FLAME GPU common Makefile rules for CUDA 7.5 and above
+# FLAME GPU common Makefile rules
 #
 # Copyright 2017 University of Sheffield.  All rights reserved.
 #
@@ -155,9 +155,9 @@ else
 		CCFLAGS += -Wall
 		# Pass directory to lib files
 		NVCCLDFLAGS += -L$(LIB_DIR)
-		# Path to the library shard object files relative to the final bin directory location.
-		#@todo - this needs to be a path from the user specified bin directory, to the LIB directory for the OS.
-		LD_RUN_PATH := LD_RUN_PATH='LD_RUN_PATH=$$ORIGIN/../$(LIB_DIR)'
+		# Store the current directory, or the 
+		# @todo this should be relative to the bin path etc provided by the user.
+		LDFLAGS += -R '$$ORIGIN:$$ORIGIN../$(LIB_DIR)'
 		# Specify linux specific shared libraries to link against
 		LINK_ARCHIVES_VISUALISATION := -lglut -lGLEW -lGLU -lGL
 	endif
@@ -341,12 +341,12 @@ endif
 
 # Rule to create the visualisation binary by linking the dependant object files.
 $(TARGET_VISUALISATION): $(VISUALISATION_DEPENDANCIES)
-	$(EXEC) $(LD_RUN_PATH) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) $(LINK_ARCHIVES_VISUALISATION) -o $@ $+
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) $(LINK_ARCHIVES_VISUALISATION) -o $@ $+
 endif
 
 # Rule to create the console binary by linking the dependant object files.
 $(TARGET_CONSOLE): $(CONSOLE_DEPENDANCIES)
-	$(EXEC) $(LD_RUN_PATH) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+
+	$(EXEC) $(NVCC) $(ALL_LDFLAGS) $(GENCODE_FLAGS) -o $@ $+
 
 # Clean object files, but do not regenerate xslt. `|| true` is used to support the case where dirs do not exist.
 clean:
