@@ -59,7 +59,8 @@ BUILD_DIR := $(EXAMPLE_BUILD_DIR)/$(OS_BUILD_DIR)
 # Path to FLAME GPU include directory
 INCLUDE_DIR := $(FLAMEGPU_ROOT)include
 # Path to FLAME GPU Lib directory (OS specific)
-LIB_DIR := $(FLAMEGPU_ROOT)lib/$(OS_LIB_DIR)
+# LIB_DIR := $(FLAMEGPU_ROOT)lib/$(OS_LIB_DIR)
+LIB_DIR := 
 
 # Path to the FLAME GPU Templates directory
 TEMPLATES_DIR := $(FLAMEGPU_ROOT)FLAMEGPU/templates
@@ -154,10 +155,10 @@ else
 		NVCCFLAGS += -std=c++11
 		CCFLAGS += -Wall
 		# Pass directory to lib files
-		NVCCLDFLAGS += -L$(LIB_DIR)
+		# NVCCLDFLAGS += -L$(LIB_DIR)
 		# Store the current directory, or the 
 		# @todo this should be relative to the bin path etc provided by the user.
-		LDFLAGS += -R '$$ORIGIN:$$ORIGIN../$(LIB_DIR)'
+		# LDFLAGS += -R '$$ORIGIN:$$ORIGIN../$(LIB_DIR)'
 		# Specify linux specific shared libraries to link against
 		LINK_ARCHIVES_VISUALISATION := -lglut -lGLEW -lGLU -lGL
 	endif
